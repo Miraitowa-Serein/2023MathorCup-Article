@@ -3,6 +3,8 @@
 \documentclass{MathorCupmodeling}
 \usepackage{mwe,color,float}
 \usepackage[linesnumbered,ruled]{algorithm2e}
+\everymath{\displaystyle}
+
 \extrafloats{100}
 \bianhao{队伍编号}
 \tihao{题号}
@@ -135,7 +137,7 @@
 	\label{tab:addlabel}
   \end{table}
   
-这个公式$\displaystyle\frac{x^2}{5}+\frac{y^2}{4}=1$是行内公式
+这个公式$\frac{x^2}{5}+\frac{y^2}{4}=1$是行内公式
 下面的公式为行间公式：
 $$
 E=\int \frac{\mathrm{d}q}{4\pi \varepsilon_0 r^2}
@@ -143,7 +145,7 @@ $$
 $$
 \sum_{i = 1}^\infty  {\frac{5}{i}}
 $$
-行内求和$\displaystyle\sum\limits_{i = 1}^\infty  {\frac{5}{i}}$
+行内求和$\sum\limits_{i = 1}^\infty  {\frac{5}{i}}$
 第二种行间公式如下\textcolor{blue}{\cref{eqone}}
 \begin{equation}\label{eqone}
 E=\int \frac{\mathrm{d}q}{4\pi \varepsilon_0 r^2}
