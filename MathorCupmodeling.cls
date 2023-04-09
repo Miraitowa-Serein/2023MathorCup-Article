@@ -57,9 +57,9 @@
 \rule{\textwidth}{1.5pt}\\
 \phantom{1}\\
 \phantom{1}\hfill{\zihao{4}\@timu}\hfill\phantom{1}\\
-\phantom{1}\hfill{\label{zy}{\heiti 摘~~要}}\hfill\phantom{1}\pdfbookmark[1]{摘要}{zy}\par%
+\phantom{1}\hfill{\label{zy}{\heiti 摘\hspace{2pc}要}}\hfill\phantom{1}\pdfbookmark[1]{摘要}{zy}\par%
 }
-{\\\phantom{1}\\{\heiti 关键词}：\@keyword\thispagestyle{empty}\setcounter{page}{-2}
+{\\\phantom{1}\\{\heiti 关键词}：\@keyword\thispagestyle{empty}\setcounter{page}{-1}
 \newpage\thispagestyle{empty}
 }
 
@@ -69,7 +69,7 @@
 \renewcommand*{\bottomfraction}{0.8}
 \renewcommand*{\floatpagefraction}{0.85}
 
-\RequirePackage[top=2.0cm,bottom=2.0cm,left=2.5cm,right=2.5cm]{geometry}
+\RequirePackage[top=1.5cm,bottom=1.8cm,left=2.0cm,right=2.0cm]{geometry}
 \RequirePackage{fancyhdr,lastpage}
 \RequirePackage[T1]{fontenc} % 保证英文字体加粗有效
 \pagestyle{fancy}
@@ -167,6 +167,10 @@
 \lstnewenvironment{python}[1][]{
 	\lstset{
 		language=Python,
+		numbers=left,
+		% stepnumber=5,
+		numberstyle=\tiny,
+		frame=lines,
 		keywordstyle=\color[RGB]{255,119,0},% 设置Keywords样式
 		morekeywords={as},% 将特定单词加入Kewords中
 		deletekeywords={print},%从 keywords中去除特定单词
