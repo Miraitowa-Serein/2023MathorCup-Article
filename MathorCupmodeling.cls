@@ -2,8 +2,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{MathorCupmodeling}[2020/01/14 version 1.0]
 
-% 设置纸张为A4纸,行距为1.25倍,设置默认字号为小4
-\LoadClass[oneside,a4paper,UTF8,linespread=1.25,zihao=-4]{ctexart}
+% 设置纸张为A4纸,行距为1.34倍,设置默认字号为小4
+\LoadClass[oneside,a4paper,UTF8,linespread=1.34,zihao=-4]{ctexart}
 
 % 设置章节格式
 \ctexset{
@@ -69,7 +69,7 @@
 \renewcommand*{\bottomfraction}{0.8}
 \renewcommand*{\floatpagefraction}{0.85}
 
-\RequirePackage[top=2.0cm,bottom=2.0cm,left=2.5cm,right=2.5cm]{geometry}
+\RequirePackage[top=1.5cm,bottom=1.8cm,left=2.0cm,right=2.0cm]{geometry}
 \RequirePackage{fancyhdr,lastpage}
 \RequirePackage[T1]{fontenc} % 保证英文字体加粗有效
 \pagestyle{fancy}
