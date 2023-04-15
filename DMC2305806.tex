@@ -64,7 +64,7 @@
 		\item \textbf{假设三}：
 		\item \textbf{假设四}：
 	\end{itemize}
-	\section{符号说明}
+	\section{符号说明}，
 	\begin{center}
 		\begin{tabularx}{0.7\textwidth}{c@{\hspace{1pc}}|@{\hspace{2pc}}X}
 			\Xhline{0.08em}
@@ -80,9 +80,75 @@
 	\end{center}
 
 	\section{模型的建立与求解}
+	对于本题，本文模型的建立与求解部分主要分为数据的准备，模型的建立、求解、结果分析。
+	\begin{itemize}
+		\item \textbf{数据的准备}：对于给定的数据集进行预处理，方便后续模型的建立，以及多次航班的规范分析。
+		\item \textbf{模型的建立、求解、结果分析}：对于给定的数据集，本文依据其特点，建立合适的模型，研究并量化分析影响飞行安全的因素。此外还需要分析飞行阶段操纵杆的过程变化情况，分析安全性。同时，还需要依据飞行参数对驾驶员飞行技术进行预测，并解释预测的合理性。最后需要结合上述问题，建立自动化智能预警机制，预防可能的安全事故的发生，给出仿真结果。
+	\end{itemize}
 	\subsection{问题一模型的建立与求解}
+	对于问题一，我们首先分析数据的特点，依据时间特征及对应的各参量进行合理性分析，对错误值进行剔除，提高数据的真实性，并以此分析数据的可靠性；之后我们依据刘柳\textcolor{blue}{\cite{Paper:刘柳}}、龙海江\textcolor{blue}{\cite{Paper:龙海江}}学者的研究结成果，采用层次聚类法对多维度指标进行聚类分析，同时在此基础上利用主成分分析累计方差解释，确定影响飞行安全的关键性指标，并利用熵权法对其重要性进行量化分析。此外注重定性及定量的分析研究，结果与现实情况相近，选取结果良好。
+	\subsubsection{附件1数据预处理}
+	通过对附件1的8个Excel表格依此分析，并结合快速存取记录器（Quick Access Recoder，QAR）数据的特点，我们发现以下几点可能的错误方面：
+	\begin{itemize}
+		\item \textbf{起始时刻不为飞机开始运行时刻}：通过对8张表8次航班的全航段记录数据的逐一分析，我们发现表格“201404091701”记录器开始记录的时刻为2014年4月9日14时23分51秒，而该航班实际运行时间应该为2014年4月9日17时01分50秒，因此我们认为该表格的起始时刻不应为前者，而应是飞机开始运行的时刻。因此我们将该表格的起始时刻校正，即删除14时23分51秒的数据，保留17时01分50秒之后的数据。而对于其余表格并未发现相同错误。
+		\item \textbf{相邻数据存在时刻上的重复且后续指标不一致}：利用Python的pandas库，对8张表格统一分析，发现所有表格均存在该方面的问题，即存在某同一时刻的数据，但后续指标却不一致，这是明显的QAR数据记录错误，究其原因，可能是由于该时刻被QAR连续记录两次，但指标发生变化，但为了保证数据的在时刻上的连续性，我们以这些重复时刻数据首次出现的为标准，将其保留，而另一条数据选择剔除。
+	\end{itemize}
+
+	经过上述处理后，为了再次验证数据在时刻层面的连续性，即每行记录的数据均间隔为1秒，我们对所有航班进行时刻点计算，均与处理后的数据记录条数一致，从而也反映出保留下的数据的合理性。
+
+	同时我们发现，附件1的8张表格，前三行均属于表头类型，且有部分字段重复，若将其直接利用pandas读取，可能会对后续处理产生一定影响，因此我们根据附件1的字段中文说明，将8张全航段表格数据表头进行处理，且保证所有表格表头一致，方便后续处理。
+
+	此外，通过读取附件1数据，查看其空缺值情况，发现“起落架”\textcolor{blue}{\footnote{这里指标名称已由原数据的英文修改为中文指标。}}该列数据缺失值较多，这里我们以附件1中表格“201404101159”为例，其空缺值情况如\textcolor{blue}{\cref{fig:附件1航班8缺失值}}所示。
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+	\textbf{熵权法（Entropy Weight Method, EWM）}是一种指标客观影响程度的量化方法。当信息熵越大时，信息的无序程度越大，此时，信息价值越小，指标权重就越小\textcolor{blue}{\cite{pewm1}}。其计算步骤如下：
+	\begin{itemize}
+		\item \textbf{Step1}，指标正向化。由于数据集构成的指标类别不一，部分指标可能数值越大越好，部分指标可能越小越好，而有的可能在某一点取值最优，为方便、高效评价，我们需要进行指标正向化处理\textcolor{blue}{\cite{pewm2}}。其处理方法如下
+		\begin{itemize}
+			\item {\heiti 越大越优指标}
+			\begin{equation}
+				x'_{ij}=x_{ij} \label{fmax}
+			\end{equation}
+			\item {\heiti 越小越优指标}
+			\begin{equation}
+				x'_{ij}=\mathrm{max}\left(x_{ij}\right)-x_{ij} \label{fmin}
+			\end{equation}
+			\item {\heiti 在$\beta$处取值最优指标}
+			\begin{equation}
+				x'_{ij}=1-\frac{\left|x_{ij}-\beta\right|}{\mathrm{max}\left(\left|x_{ij}-\beta\right|\right)} \label{fmid}
+			\end{equation}
+		\end{itemize}
+		\item \textbf{Step2}，数据标准化。由于数据集构成的指标数据数量级存在差异、量纲不一，为消除上述情况对结果的影响，我们需要将各指标进行标准化处理，这里我们使用Min-Max方法。处理方法计算公式如下
+		\begin{equation}
+			r_{ij}=\frac{x'_{ij}-\mathrm{min}\left(x'_{j}\right)}{\mathrm{max}\left(x'_{j}\right)-\mathrm{min}\left(x'_{j}\right)} \label{Min-Max}
+		\end{equation}
+		\item \textbf{Step3}，计算信息熵。进行上述处理后可得到由特征数据构成的矩阵$R\left(r_{ij}\right)_{m\times n}$，对于某一项指标的数据$r_j$，其信息熵为
+		\begin{equation}
+			E_j=-\frac{1}{\ln m}\cdot\sum\limits_{i=1}^{m}p_{ij}\ln p_{ij} \label{fentropyj}
+		\end{equation}
+		其中
+		\begin{equation}
+			p_{ij}=\frac{r_{ij}}{\sum\limits_{i=1}^{m}r_{ij}} \label{fpij}
+		\end{equation}
+		观察到\textcolor{blue}{\eqref{fpij}}中分母不可为$0$，且\textcolor{blue}{\eqref{fentropyj}}对数真数部分不能为$0$，因此，我们在进行\textbf{Step2}时，标准化区间的最小值设为$0.002$，可避免计算时的不合定义。
+		\item \textbf{Step4}，计算指标权重。其计算公式如下
+		\begin{equation}
+			\omega_j=\frac{1-E_j}{\sum\limits_{j=1}^{n}\left(1-E_j\right)} \label{fwj}
+		\end{equation}
+	\end{itemize}
 
 
 
@@ -195,7 +261,8 @@ E=\int \frac{\mathrm{d}q}{4\pi \varepsilon_0 r^2}
 	\phantomsection
 	\addcontentsline{toc}{section}{\textbf{参考文献}}
 	\begin{thebibliography}{99}
-	\bibitem{p1}张学工.关于统计学习理论与支持向量机[J].自动化学报,2000(01):36-46.DOI:10.16383/j.aas.2000.01.005.
+	\bibitem{Paper:刘柳}刘柳. 基于QAR数据的着陆阶段飞行风险研究[D].重庆大学,2018.
+	\bibitem{Paper:龙海江}龙海江. 基于QAR数据的重着陆分析研究[D].中国民用航空飞行学院,2020.DOI:10.27722/d.cnki.gzgmh.2020.000089.
 	
 	\end{thebibliography}
 
