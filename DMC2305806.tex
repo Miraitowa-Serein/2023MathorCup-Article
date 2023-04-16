@@ -851,41 +851,3096 @@
 	支撑文件列表如下（列表中不包含原始数据集）：
 
 \newpage
-% \phantomsection
-% \addcontentsline{toc}{subsection}{[C]使用的软件、环境}
-	% \section*{[C]使用的软件、环境}
+
 	\noindent{\heiti [C]使用的软件、环境}
 	~\\
 
-	为解决该问题，我们所使用的主要软件有：
-	
-	Python环境下所用使用到的库及其版本如下：
+	\textbf{C.1}：为解决该问题，我们所使用的主要软件有：
+	\begin{itemize}
+		\item TeX Live 2022
+		\item Visual Studio Code 1.77.3
+		\item WPS Office 2023春季更新（14036）
+		\item Python 3.10.4
+		\item Pycharm 2023.1 (Professional Edition)
+	\end{itemize}
 
+	\textbf{C.2}：Python环境下所用使用到的库及其版本如下：
+\begin{table}[H]
+	\centering
+	\setlength{\aboverulesep}{0pt}
+	\setlength{\belowrulesep}{0pt}
+	\scalebox{0.85}{
+	  \begin{tabular}{cc||cc}
+	  \toprule
+	  \textbf{库}     & \textbf{版本}    & \textbf{库}     & \textbf{版本} \\
+	  \midrule
+	  copy  & 内置库   & matplotlib & 3.5.2 \\
+	  jupyter & 1.0.0 & numpy & 1.22.4+mkl \\
+	  jupyter-client & 7.3.1 & openpyxl & 3.0.10 \\
+	  jupyter-console & 6.4.3 & pandas & 1.4.2 \\
+	  jupyter-contrib-core & 0.4.0 & pyecharts & 1.9.1 \\
+	  jupyter-contrib-nbextensions & 0.5.1 & scikit-learn & 0.22.2 psot1 \\
+	  jupyter-highlight-selected-word & 0.2.0 & sklearn & 0.0  \\
+	  jupyterlab-pygments & 0.2.2 & snapshot\_phantomjs & 0.0.3 \\
+	  jupyterlab-widgets & 1.1.0 & xgboost & 1.6.1 \\
+	  jupyter-latex-envs & 1.4.6 & yellowbrick & 1.4 \\
+	  jupyter-nbextensions-configurator & 0.5.0 &       &  \\
+	  \bottomrule
+	  \end{tabular}}
+\end{table}
+  
 \newpage
-% \phantomsection
-% \addcontentsline{toc}{subsection}{[D]问题解决源程序}
-	% \section*{[D]问题解决源程序}
+
 \noindent{\heiti [D]问题解决源程序}
 
-% \phantomsection
-% \addcontentsline{toc}{subsubsection}{D.1}
-\textbf{D.1 }
+\textbf{D.1 航班1数据分析}
 \begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# # 附件一预处理（不包括异常值剔除及标准化）
+
+# In[1]:
+
+
+import pandas as pd
 import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_excel("Data\\First\\New\\201404070532.xlsx",sheet_name='201404070532')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+
+
+# In[5]:
+
+
+data.replace({"起落架":{'DOWN':1},
+              "空地电门0.2秒":{True:1,False:0},
+              "空地电门0.4秒":{True:1,False:0},
+              "空地电门0.6秒":{True:1,False:0},
+              "空地电门0.8秒":{True:1,False:0},
+              "空地电门1秒":{True:1,False:0},
+              "是否接通了A/T":{'DISENGD':0,'ENGAGED':1},
+              "是否接通了任意侧的A/P":{'OFF':0,'ON':1},
+              }, inplace=True)
+data
+
+
+# In[6]:
+
+
+data=data.fillna(0)
+data
+
+
+# In[7]:
+
+
+data.drop(labels=['月','日','起飞机场','落地机场','飞机重量'],axis=1,inplace=True)
+data
+
+
+# # QAR异常判断，剔除
+
+# In[8]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup', dup_row)
+data[data['is_dup'] == True]
+
+
+# In[9]:
+
+
+data=data.drop_duplicates(subset=['具体时间'],keep='first')
+data
+
+
+# In[10]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup_N', dup_row)
+data[data['is_dup_N'] == True]
+
+
+# In[11]:
+
+
+def function(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+
+
+data['bool'] = data.apply(lambda x : function(x['俯仰角率'],x['俯仰角率.1']),axis = 1)
+data
+
+
+# In[12]:
+
+
+data[data['bool']==0]
+
+
+# In[13]:
+
+
+data=data.drop(labels=['is_dup','is_dup_N','bool','具体时间','俯仰角率.1'],axis=1)
+data
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_csv('Data\\First\\NNew\\1-1D.csv')
+data
+
+
+# # 数据标准化
+
+# In[3]:
+
+
+import sklearn.preprocessing as sp
+StandardTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+StandardTransform
+
+
+# In[4]:
+
+
+ListColumns=list(StandardTransform.columns)
+ListColumns
+
+
+# In[5]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListColumns
+StandardTransform
+
+
+# # 数据归一化
+
+# In[6]:
+
+
+import sklearn.preprocessing as sp
+MinMaxTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+MinMaxTransform
+
+
+# In[7]:
+
+
+MinMaxTransformScaler=sp.MinMaxScaler(feature_range=(0.002, 1))
+MinMaxTransformScaler=MinMaxTransformScaler.fit(MinMaxTransform)
+MinMaxTransform=MinMaxTransformScaler.transform(MinMaxTransform)
+MinMaxTransform=pd.DataFrame(MinMaxTransform)
+MinMaxTransform.columns=ListColumns
+MinMaxTransform
+
+
+# # PCA&层次聚类
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[9]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(StandardTransform)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',fontsize=13)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=12)
+plt.yticks(font='Times New Roman',fontsize=12)
+plt.tight_layout()
+plt.savefig("Figures\\1-1 PCA Cumulative explained variance.pdf")
+
+
+# In[10]:
+
+
+import scipy.cluster.hierarchy as sch
+plt.figure(figsize=(12, 6))
+dendrogram = sch.dendrogram(sch.linkage(StandardTransform.T, method = 'ward'))
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+plt.xlabel('指标',fontsize=13)
+plt.ylabel('离差平方和',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=11)
+plt.yticks(font='Times New Roman',fontsize=11)
+plt.savefig("Figures\\1-1 层次聚类树状图.pdf")
+
+
+# 环境：风向、风速
+# 人为操作：下降率、地速、起落架、G值、杆量、盘量、RUDD位置
+# 飞机状态：姿态（俯仰角）、坡度、发动机N1值、磁航向、油门杆位置、下滑道偏差、航向道偏差、俯仰角率
+
+# In[11]:
+
+
+IFactor=MinMaxTransform.loc[:,['风向','风速','下降率','地速','起落架',
+                               '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒','姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4','杆量','杆量.1','杆量.2','杆量.3','杆量.4','坡度（左负右正）','坡度（左负右正）.1','盘量','盘量.1','盘量.2','盘量.3','盘量.4','左侧发动机油门N1值','右侧发动机油门N1值','磁航向','左发油门杆位置（角度）','左发油门杆位置（角度）.1','右发油门杆位置（角度）','右发油门杆位置（角度）.1','RUDD位置','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）','航向道偏差（C）','航向道偏差（L）','航向道偏差（R）','俯仰角率']]
+IFactor
+
+
+# In[12]:
+
+
+IFactorEnv=IFactor.loc[:,['风向','风速']]
+IFactorEnv
+
+
+# In[13]:
+
+
+IFactorPeo=IFactor.loc[:,['下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                          'RUDD位置',]]
+IFactorPeo
+
+
+# In[14]:
+
+
+IFactorMac=IFactor.loc[:,~IFactor.columns.isin(['风向','风速','下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4','RUDD位置',])]
+IFactorMac
+
+
+# In[15]:
+
+
+import copy
+def ewm(data):
+    label_need = data.keys()[:]
+    data1 = data[label_need].values
+    data2 = data1
+    [m, n] = data2.shape
+    data3 = copy.deepcopy(data2)
+    p = copy.deepcopy(data3)
+    for j in range(0, n):
+        p[:, j] = data3[:, j] / sum(data3[:, j])
+    e = copy.deepcopy(data3[0, :])
+    for j in range(0, n):
+        e[j] = -1 / np.log(m) * sum(p[:, j] * np.log(p[:, j]))
+    w = (1 - e) / sum(1 - e)
+    total = 0
+    for sum_w in range(0, len(w)):
+        total = total + w[sum_w]
+    print(f'权重为：{w}，权重之和为：{total}')
+
+
+# In[16]:
+
+
+ewm(IFactorEnv)
+
+
+# In[17]:
+
+
+ewm(IFactorPeo)
+
+
+# In[18]:
+
+
+ewm(IFactorMac)
+
+
+# In[19]:
+
+
+ListEnv=list(IFactorEnv.columns)
+ListPeo=list(IFactorPeo.columns)
+ListMac=list(IFactorMac.columns)
+print(ListEnv)
+print(ListPeo)
+print(ListMac)
+
+
 \end{python}
 \newpage
-% \phantomsection
-% \addcontentsline{toc}{subsubsection}{D.2}
-\textbf{D.2 }
+\textbf{D.2 航班2数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
 
+# # 附件一预处理（不包括异常值剔除及标准化）
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_excel("Data\\First\\New\\201404071917.xlsx",sheet_name='201404071917')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+
+
+# In[5]:
+
+
+data.replace({"起落架":{'DOWN':1},
+              "空地电门0.2秒":{True:1,False:0},
+              "空地电门0.4秒":{True:1,False:0},
+              "空地电门0.6秒":{True:1,False:0},
+              "空地电门0.8秒":{True:1,False:0},
+              "空地电门1秒":{True:1,False:0},
+              "是否接通了A/T":{'DISENGD':0,'ENGAGED':1},
+              "是否接通了任意侧的A/P":{'OFF':0,'ON':1},
+              }, inplace=True)
+data
+
+
+# In[6]:
+
+
+data=data.fillna(0)
+data
+
+
+# In[7]:
+
+
+data.drop(labels=['月','日','起飞机场','落地机场','飞机重量'],axis=1,inplace=True)
+data
+
+
+# # QAR异常判断，剔除
+
+# In[8]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup', dup_row)
+data[data['is_dup'] == True]
+
+
+# In[9]:
+
+
+data=data.drop_duplicates(subset=['具体时间'],keep='first')
+data
+
+
+# In[10]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup_N', dup_row)
+data[data['is_dup_N'] == True]
+
+
+# In[11]:
+
+
+def function(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+
+
+data['bool'] = data.apply(lambda x : function(x['俯仰角率'],x['俯仰角率.1']),axis = 1)
+data
+
+
+# In[12]:
+
+
+data[data['bool']==0]
+
+
+# In[13]:
+
+
+data=data.drop(labels=['is_dup','is_dup_N','bool','具体时间','俯仰角率.1'],axis=1)
+data
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_csv('Data\\First\\NNew\\1-2D.csv')
+data
+
+
+# # 数据标准化
+
+# In[3]:
+
+
+import sklearn.preprocessing as sp
+StandardTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+StandardTransform
+
+
+# In[4]:
+
+
+ListColumns=list(StandardTransform.columns)
+ListColumns
+
+
+# In[5]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListColumns
+StandardTransform
+
+
+# # 数据归一化
+
+# In[6]:
+
+
+import sklearn.preprocessing as sp
+MinMaxTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+MinMaxTransform
+
+
+# In[7]:
+
+
+MinMaxTransformScaler=sp.MinMaxScaler(feature_range=(0.002, 1))
+MinMaxTransformScaler=MinMaxTransformScaler.fit(MinMaxTransform)
+MinMaxTransform=MinMaxTransformScaler.transform(MinMaxTransform)
+MinMaxTransform=pd.DataFrame(MinMaxTransform)
+MinMaxTransform.columns=ListColumns
+MinMaxTransform
+
+
+# # PCA&层次聚类
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[9]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(StandardTransform)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',fontsize=13)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=12)
+plt.yticks(font='Times New Roman',fontsize=12)
+plt.tight_layout()
+plt.savefig("Figures\\1-2 PCA Cumulative explained variance.pdf")
+
+
+# In[10]:
+
+
+import scipy.cluster.hierarchy as sch
+plt.figure(figsize=(12, 6))
+dendrogram = sch.dendrogram(sch.linkage(StandardTransform.T, method = 'ward'))
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+plt.xlabel('指标',fontsize=13)
+plt.ylabel('离差平方和',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=11)
+plt.yticks(font='Times New Roman',fontsize=11)
+plt.savefig("Figures\\1-2 层次聚类树状图.pdf")
+
+
+# 环境：风向、风速
+# 人为操作：下降率、地速、起落架、G值、杆量、盘量、RUDD位置
+# 飞机状态：姿态（俯仰角）、坡度、发动机N1值、磁航向、油门杆位置、下滑道偏差、航向道偏差、俯仰角率
+
+# In[11]:
+
+
+IFactor=MinMaxTransform.loc[:,['风向','风速','下降率','地速','起落架',
+                               '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                               '姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4',
+                               '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                               '坡度（左负右正）','坡度（左负右正）.1',
+                               '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                               '左侧发动机油门N1值','右侧发动机油门N1值','磁航向',
+                               '左发油门杆位置（角度）','左发油门杆位置（角度）.1','右发油门杆位置（角度）','右发油门杆位置（角度）.1',
+                               'RUDD位置','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+                               '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）',
+                               '俯仰角率']]
+IFactor
+
+
+# In[12]:
+
+
+IFactorEnv=IFactor.loc[:,['风向','风速']]
+IFactorEnv
+
+
+# In[13]:
+
+
+IFactorPeo=IFactor.loc[:,['下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                          'RUDD位置',]]
+IFactorPeo
+
+
+# In[14]:
+
+
+IFactorMac=IFactor.loc[:,~IFactor.columns.isin(['风向','风速','下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4','RUDD位置',])]
+IFactorMac
+
+
+# In[15]:
+
+
+import copy
+def ewm(data):
+    label_need = data.keys()[:]
+    data1 = data[label_need].values
+    data2 = data1
+    [m, n] = data2.shape
+    data3 = copy.deepcopy(data2)
+    p = copy.deepcopy(data3)
+    for j in range(0, n):
+        p[:, j] = data3[:, j] / sum(data3[:, j])
+    e = copy.deepcopy(data3[0, :])
+    for j in range(0, n):
+        e[j] = -1 / np.log(m) * sum(p[:, j] * np.log(p[:, j]))
+    w = (1 - e) / sum(1 - e)
+    total = 0
+    for sum_w in range(0, len(w)):
+        total = total + w[sum_w]
+    print(f'权重为：{w}，权重之和为：{total}')
+
+
+# In[16]:
+
+
+ewm(IFactorEnv)
+
+
+# In[17]:
+
+
+ewm(IFactorPeo)
+
+
+# In[18]:
+
+
+ewm(IFactorMac)
+
+
+\end{python}
 \newpage
-% \phantomsection
-% \addcontentsline{toc}{subsubsection}{D.3}
-\textbf{D.3 }
+\textbf{D.3 航班3数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
 
+# # 附件一预处理（不包括异常值剔除及标准化）
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_excel("Data\\First\\New\\201404080617.xlsx",sheet_name='201404080617')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+
+
+# In[5]:
+
+
+data.replace({"起落架":{'DOWN':1},
+              "空地电门0.2秒":{True:1,False:0},
+              "空地电门0.4秒":{True:1,False:0},
+              "空地电门0.6秒":{True:1,False:0},
+              "空地电门0.8秒":{True:1,False:0},
+              "空地电门1秒":{True:1,False:0},
+              "是否接通了A/T":{'DISENGD':0,'ENGAGED':1},
+              "是否接通了任意侧的A/P":{'OFF':0,'ON':1},
+              }, inplace=True)
+data
+
+
+# In[6]:
+
+
+data=data.fillna(0)
+data
+
+
+# In[7]:
+
+
+data.drop(labels=['月','日','起飞机场','落地机场','飞机重量'],axis=1,inplace=True)
+data
+
+
+# # QAR异常判断，剔除
+
+# In[8]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup', dup_row)
+data[data['is_dup'] == True]
+
+
+# In[9]:
+
+
+data=data.drop_duplicates(subset=['具体时间'],keep='first')
+data
+
+
+# In[10]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup_N', dup_row)
+data[data['is_dup_N'] == True]
+
+
+# In[11]:
+
+
+def function(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+
+
+data['bool'] = data.apply(lambda x : function(x['俯仰角率'],x['俯仰角率.1']),axis = 1)
+data
+
+
+# In[12]:
+
+
+data[data['bool']==0]
+
+
+# In[13]:
+
+
+data=data.drop(labels=['is_dup','is_dup_N','bool','具体时间','俯仰角率.1'],axis=1)
+data
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_csv('Data\\First\\NNew\\1-3D.csv')
+data
+
+
+# # 数据标准化
+
+# In[3]:
+
+
+import sklearn.preprocessing as sp
+StandardTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+StandardTransform
+
+
+# In[4]:
+
+
+ListColumns=list(StandardTransform.columns)
+ListColumns
+
+
+# In[5]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListColumns
+StandardTransform
+
+
+# # 数据归一化
+
+# In[6]:
+
+
+import sklearn.preprocessing as sp
+MinMaxTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+MinMaxTransform
+
+
+# In[7]:
+
+
+MinMaxTransformScaler=sp.MinMaxScaler(feature_range=(0.002, 1))
+MinMaxTransformScaler=MinMaxTransformScaler.fit(MinMaxTransform)
+MinMaxTransform=MinMaxTransformScaler.transform(MinMaxTransform)
+MinMaxTransform=pd.DataFrame(MinMaxTransform)
+MinMaxTransform.columns=ListColumns
+MinMaxTransform
+
+
+# # PCA&层次聚类
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[9]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(StandardTransform)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',fontsize=13)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=12)
+plt.yticks(font='Times New Roman',fontsize=12)
+plt.tight_layout()
+plt.savefig("Figures\\1-3 PCA Cumulative explained variance.pdf")
+
+
+# In[10]:
+
+
+import scipy.cluster.hierarchy as sch
+plt.figure(figsize=(12, 6))
+dendrogram = sch.dendrogram(sch.linkage(StandardTransform.T, method = 'ward'))
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+plt.xlabel('指标',fontsize=13)
+plt.ylabel('离差平方和',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=11)
+plt.yticks(font='Times New Roman',fontsize=11)
+plt.savefig("Figures\\1-3 层次聚类树状图.pdf")
+
+
+# 环境：风向、风速
+# 人为操作：下降率、地速、起落架、G值、杆量、盘量、RUDD位置
+# 飞机状态：姿态（俯仰角）、坡度、发动机N1值、磁航向、油门杆位置、下滑道偏差、航向道偏差、俯仰角率
+
+# In[11]:
+
+
+IFactor=MinMaxTransform.loc[:,['风向','风速','下降率','地速','起落架',
+                               '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                               '姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4',
+                               '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                               '坡度（左负右正）','坡度（左负右正）.1',
+                               '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                               '左侧发动机油门N1值','右侧发动机油门N1值','磁航向',
+                               '左发油门杆位置（角度）','左发油门杆位置（角度）.1','右发油门杆位置（角度）','右发油门杆位置（角度）.1',
+                               'RUDD位置','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+                               '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）',
+                               '俯仰角率']]
+IFactor
+
+
+# In[12]:
+
+
+IFactorEnv=IFactor.loc[:,['风向','风速']]
+IFactorEnv
+
+
+# In[13]:
+
+
+IFactorPeo=IFactor.loc[:,['下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                          'RUDD位置',]]
+IFactorPeo
+
+
+# In[14]:
+
+
+IFactorMac=IFactor.loc[:,~IFactor.columns.isin(['风向','风速','下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4','RUDD位置',])]
+IFactorMac
+
+
+# In[15]:
+
+
+import copy
+def ewm(data):
+    label_need = data.keys()[:]
+    data1 = data[label_need].values
+    data2 = data1
+    [m, n] = data2.shape
+    data3 = copy.deepcopy(data2)
+    p = copy.deepcopy(data3)
+    for j in range(0, n):
+        p[:, j] = data3[:, j] / sum(data3[:, j])
+    e = copy.deepcopy(data3[0, :])
+    for j in range(0, n):
+        e[j] = -1 / np.log(m) * sum(p[:, j] * np.log(p[:, j]))
+    w = (1 - e) / sum(1 - e)
+    total = 0
+    for sum_w in range(0, len(w)):
+        total = total + w[sum_w]
+    print(f'权重为：{w}，权重之和为：{total}')
+
+
+# In[16]:
+
+
+ewm(IFactorEnv)
+
+
+# In[17]:
+
+
+ewm(IFactorPeo)
+
+
+# In[18]:
+
+
+ewm(IFactorMac)
+
+
+\end{python}
 \newpage
-% \phantomsection
-% \addcontentsline{toc}{subsubsection}{D.4}
-\textbf{D.4 }
+\textbf{D.4 航班4数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
 
+# # 附件一预处理（不包括异常值剔除及标准化）
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_excel("Data\\First\\New\\201404081034.xlsx",sheet_name='201404081034')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+
+
+# In[5]:
+
+
+data.replace({"起落架":{'DOWN':1},
+              "空地电门0.2秒":{True:1,False:0},
+              "空地电门0.4秒":{True:1,False:0},
+              "空地电门0.6秒":{True:1,False:0},
+              "空地电门0.8秒":{True:1,False:0},
+              "空地电门1秒":{True:1,False:0},
+              "是否接通了A/T":{'DISENGD':0,'ENGAGED':1},
+              "是否接通了任意侧的A/P":{'OFF':0,'ON':1},
+              }, inplace=True)
+data
+
+
+# In[6]:
+
+
+data=data.fillna(0)
+data
+
+
+# In[7]:
+
+
+data.drop(labels=['月','日','起飞机场','落地机场','飞机重量'],axis=1,inplace=True)
+data
+
+
+# # QAR异常判断，剔除
+
+# In[8]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup', dup_row)
+data[data['is_dup'] == True]
+
+
+# In[9]:
+
+
+data=data.drop_duplicates(subset=['具体时间'],keep='first')
+data
+
+
+# In[10]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup_N', dup_row)
+data[data['is_dup_N'] == True]
+
+
+# In[11]:
+
+
+def function(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+
+
+data['bool'] = data.apply(lambda x : function(x['俯仰角率'],x['俯仰角率.1']),axis = 1)
+data
+
+
+# In[12]:
+
+
+data[data['bool']==0]
+
+
+# In[13]:
+
+
+data=data.drop(labels=['is_dup','is_dup_N','bool','具体时间','俯仰角率.1'],axis=1)
+data
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_csv('Data\\First\\NNew\\1-4D.csv')
+data
+
+
+# # 数据标准化
+
+# In[3]:
+
+
+import sklearn.preprocessing as sp
+StandardTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+StandardTransform
+
+
+# In[4]:
+
+
+ListColumns=list(StandardTransform.columns)
+ListColumns
+
+
+# In[5]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListColumns
+StandardTransform
+
+
+# # 数据归一化
+
+# In[6]:
+
+
+import sklearn.preprocessing as sp
+MinMaxTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+MinMaxTransform
+
+
+# In[7]:
+
+
+MinMaxTransformScaler=sp.MinMaxScaler(feature_range=(0.002, 1))
+MinMaxTransformScaler=MinMaxTransformScaler.fit(MinMaxTransform)
+MinMaxTransform=MinMaxTransformScaler.transform(MinMaxTransform)
+MinMaxTransform=pd.DataFrame(MinMaxTransform)
+MinMaxTransform.columns=ListColumns
+MinMaxTransform
+
+
+# # PCA&层次聚类
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[9]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(StandardTransform)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',fontsize=13)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=12)
+plt.yticks(font='Times New Roman',fontsize=12)
+plt.tight_layout()
+plt.savefig("Figures\\1-4 PCA Cumulative explained variance.pdf")
+
+
+# In[10]:
+
+
+import scipy.cluster.hierarchy as sch
+plt.figure(figsize=(12, 6))
+dendrogram = sch.dendrogram(sch.linkage(StandardTransform.T, method = 'ward'))
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+plt.xlabel('指标',fontsize=13)
+plt.ylabel('离差平方和',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=11)
+plt.yticks(font='Times New Roman',fontsize=11)
+plt.savefig("Figures\\1-4 层次聚类树状图.pdf")
+
+
+# 环境：风向、风速
+# 人为操作：下降率、地速、起落架、G值、杆量、盘量、RUDD位置
+# 飞机状态：姿态（俯仰角）、坡度、发动机N1值、磁航向、油门杆位置、下滑道偏差、航向道偏差、俯仰角率
+
+# In[11]:
+
+
+IFactor=MinMaxTransform.loc[:,['风向','风速','下降率','地速','起落架',
+                               '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                               '姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4',
+                               '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                               '坡度（左负右正）','坡度（左负右正）.1',
+                               '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                               '左侧发动机油门N1值','右侧发动机油门N1值','磁航向',
+                               '左发油门杆位置（角度）','左发油门杆位置（角度）.1','右发油门杆位置（角度）','右发油门杆位置（角度）.1',
+                               'RUDD位置','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+                               '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）',
+                               '俯仰角率']]
+IFactor
+
+
+# In[12]:
+
+
+IFactorEnv=IFactor.loc[:,['风向','风速']]
+IFactorEnv
+
+
+# In[13]:
+
+
+IFactorPeo=IFactor.loc[:,['下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                          'RUDD位置',]]
+IFactorPeo
+
+
+# In[14]:
+
+
+IFactorMac=IFactor.loc[:,~IFactor.columns.isin(['风向','风速','下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4','RUDD位置',])]
+IFactorMac
+
+
+# In[15]:
+
+
+import copy
+def ewm(data):
+    label_need = data.keys()[:]
+    data1 = data[label_need].values
+    data2 = data1
+    [m, n] = data2.shape
+    data3 = copy.deepcopy(data2)
+    p = copy.deepcopy(data3)
+    for j in range(0, n):
+        p[:, j] = data3[:, j] / sum(data3[:, j])
+    e = copy.deepcopy(data3[0, :])
+    for j in range(0, n):
+        e[j] = -1 / np.log(m) * sum(p[:, j] * np.log(p[:, j]))
+    w = (1 - e) / sum(1 - e)
+    total = 0
+    for sum_w in range(0, len(w)):
+        total = total + w[sum_w]
+    print(f'权重为：{w}，权重之和为：{total}')
+
+
+# In[16]:
+
+
+ewm(IFactorEnv)
+
+
+# In[17]:
+
+
+ewm(IFactorPeo)
+
+
+# In[18]:
+
+
+ewm(IFactorMac)
+
+
+\end{python}
+\newpage
+\textbf{D.5 航班5数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# # 附件一预处理（不包括异常值剔除及标准化）
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_excel("Data\\First\\New\\201404090110.xlsx",sheet_name='201404090110')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+
+
+# In[5]:
+
+
+data.replace({"起落架":{'DOWN':1},
+              "空地电门0.2秒":{True:1,False:0},
+              "空地电门0.4秒":{True:1,False:0},
+              "空地电门0.6秒":{True:1,False:0},
+              "空地电门0.8秒":{True:1,False:0},
+              "空地电门1秒":{True:1,False:0},
+              "是否接通了A/T":{'DISENGD':0,'ENGAGED':1},
+              "是否接通了任意侧的A/P":{'OFF':0,'ON':1},
+              }, inplace=True)
+data
+
+
+# In[6]:
+
+
+data=data.fillna(0)
+data
+
+
+# In[7]:
+
+
+data.drop(labels=['月','日','起飞机场','落地机场','飞机重量'],axis=1,inplace=True)
+data
+
+
+# # QAR异常判断，剔除
+
+# In[8]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup', dup_row)
+data[data['is_dup'] == True]
+
+
+# In[9]:
+
+
+data=data.drop_duplicates(subset=['具体时间'],keep='first')
+data
+
+
+# In[10]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup_N', dup_row)
+data[data['is_dup_N'] == True]
+
+
+# In[11]:
+
+
+def function(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+
+
+data['bool'] = data.apply(lambda x : function(x['俯仰角率'],x['俯仰角率.1']),axis = 1)
+data
+
+
+# In[12]:
+
+
+data[data['bool']==0]
+
+
+# In[13]:
+
+
+data=data.drop(labels=['is_dup','is_dup_N','bool','具体时间','俯仰角率.1'],axis=1)
+data
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_csv('Data\\First\\NNew\\1-5D.csv')
+data
+
+
+# # 数据标准化
+
+# In[3]:
+
+
+import sklearn.preprocessing as sp
+StandardTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+StandardTransform
+
+
+# In[4]:
+
+
+ListColumns=list(StandardTransform.columns)
+ListColumns
+
+
+# In[5]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListColumns
+StandardTransform
+
+
+# # 数据归一化
+
+# In[6]:
+
+
+import sklearn.preprocessing as sp
+MinMaxTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+MinMaxTransform
+
+
+# In[7]:
+
+
+MinMaxTransformScaler=sp.MinMaxScaler(feature_range=(0.002, 1))
+MinMaxTransformScaler=MinMaxTransformScaler.fit(MinMaxTransform)
+MinMaxTransform=MinMaxTransformScaler.transform(MinMaxTransform)
+MinMaxTransform=pd.DataFrame(MinMaxTransform)
+MinMaxTransform.columns=ListColumns
+MinMaxTransform
+
+
+# # PCA&层次聚类
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[9]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(StandardTransform)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',fontsize=13)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=12)
+plt.yticks(font='Times New Roman',fontsize=12)
+plt.tight_layout()
+plt.savefig("Figures\\1-5 PCA Cumulative explained variance.pdf")
+
+
+# In[10]:
+
+
+import scipy.cluster.hierarchy as sch
+plt.figure(figsize=(12, 6))
+dendrogram = sch.dendrogram(sch.linkage(StandardTransform.T, method = 'ward'))
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+plt.xlabel('指标',fontsize=13)
+plt.ylabel('离差平方和',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=11)
+plt.yticks(font='Times New Roman',fontsize=11)
+plt.savefig("Figures\\1-5 层次聚类树状图.pdf")
+
+
+# 环境：风向、风速
+# 人为操作：下降率、地速、起落架、G值、杆量、盘量、RUDD位置
+# 飞机状态：姿态（俯仰角）、坡度、发动机N1值、磁航向、油门杆位置、下滑道偏差、航向道偏差、俯仰角率
+
+# In[11]:
+
+
+IFactor=MinMaxTransform.loc[:,['风向','风速','下降率','地速','起落架',
+                               '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                               '姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4',
+                               '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                               '坡度（左负右正）','坡度（左负右正）.1',
+                               '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                               '左侧发动机油门N1值','右侧发动机油门N1值','磁航向',
+                               '左发油门杆位置（角度）','左发油门杆位置（角度）.1','右发油门杆位置（角度）','右发油门杆位置（角度）.1',
+                               'RUDD位置','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+                               '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）',
+                               '俯仰角率']]
+IFactor
+
+
+# In[12]:
+
+
+IFactorEnv=IFactor.loc[:,['风向','风速']]
+IFactorEnv
+
+
+# In[13]:
+
+
+IFactorPeo=IFactor.loc[:,['下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                          'RUDD位置',]]
+IFactorPeo
+
+
+# In[14]:
+
+
+IFactorMac=IFactor.loc[:,~IFactor.columns.isin(['风向','风速','下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4','RUDD位置',])]
+IFactorMac
+
+
+# In[15]:
+
+
+import copy
+def ewm(data):
+    label_need = data.keys()[:]
+    data1 = data[label_need].values
+    data2 = data1
+    [m, n] = data2.shape
+    data3 = copy.deepcopy(data2)
+    p = copy.deepcopy(data3)
+    for j in range(0, n):
+        p[:, j] = data3[:, j] / sum(data3[:, j])
+    e = copy.deepcopy(data3[0, :])
+    for j in range(0, n):
+        e[j] = -1 / np.log(m) * sum(p[:, j] * np.log(p[:, j]))
+    w = (1 - e) / sum(1 - e)
+    total = 0
+    for sum_w in range(0, len(w)):
+        total = total + w[sum_w]
+    print(f'权重为：{w}，权重之和为：{total}')
+
+
+# In[16]:
+
+
+ewm(IFactorEnv)
+
+
+# In[17]:
+
+
+ewm(IFactorPeo)
+
+
+# In[18]:
+
+
+ewm(IFactorMac)
+
+
+\end{python}
+\newpage
+\textbf{D.6 航班6数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# # 附件一预处理（不包括异常值剔除及标准化）
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_excel("Data\\First\\New\\201404091701.xlsx",sheet_name='201404091701')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+
+
+# In[5]:
+
+
+data.replace({"起落架":{'DOWN':1},
+              "空地电门0.2秒":{True:1,False:0},
+              "空地电门0.4秒":{True:1,False:0},
+              "空地电门0.6秒":{True:1,False:0},
+              "空地电门0.8秒":{True:1,False:0},
+              "空地电门1秒":{True:1,False:0},
+              "是否接通了A/T":{'DISENGD':0,'ENGAGED':1},
+              "是否接通了任意侧的A/P":{'OFF':0,'ON':1},
+              }, inplace=True)
+data
+
+
+# In[6]:
+
+
+data=data.fillna(0)
+data
+
+
+# In[7]:
+
+
+data.drop(labels=['月','日','起飞机场','落地机场','飞机重量'],axis=1,inplace=True)
+data
+
+
+# # QAR异常判断，剔除
+
+# In[8]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup', dup_row)
+data[data['is_dup'] == True]
+
+
+# In[9]:
+
+
+data=data.drop_duplicates(subset=['具体时间'],keep='first')
+data
+
+
+# In[10]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup_N', dup_row)
+data[data['is_dup_N'] == True]
+
+
+# In[11]:
+
+
+def function(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+
+
+data['bool'] = data.apply(lambda x : function(x['俯仰角率'],x['俯仰角率.1']),axis = 1)
+data
+
+
+# In[12]:
+
+
+data[data['bool']==0]
+
+
+# In[13]:
+
+
+data=data.drop(labels=['is_dup','is_dup_N','bool','具体时间','俯仰角率.1'],axis=1)
+data
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_csv('Data\\First\\NNew\\1-6D.csv')
+data
+
+
+# # 数据标准化
+
+# In[3]:
+
+
+import sklearn.preprocessing as sp
+StandardTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+StandardTransform
+
+
+# In[4]:
+
+
+ListColumns=list(StandardTransform.columns)
+ListColumns
+
+
+# In[5]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListColumns
+StandardTransform
+
+
+# # 数据归一化
+
+# In[6]:
+
+
+import sklearn.preprocessing as sp
+MinMaxTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+MinMaxTransform
+
+
+# In[7]:
+
+
+MinMaxTransformScaler=sp.MinMaxScaler(feature_range=(0.002, 1))
+MinMaxTransformScaler=MinMaxTransformScaler.fit(MinMaxTransform)
+MinMaxTransform=MinMaxTransformScaler.transform(MinMaxTransform)
+MinMaxTransform=pd.DataFrame(MinMaxTransform)
+MinMaxTransform.columns=ListColumns
+MinMaxTransform
+
+
+# # PCA&层次聚类
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[9]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(StandardTransform)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',fontsize=13)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=12)
+plt.yticks(font='Times New Roman',fontsize=12)
+plt.tight_layout()
+plt.savefig("Figures\\1-6 PCA Cumulative explained variance.pdf")
+
+
+# In[10]:
+
+
+import scipy.cluster.hierarchy as sch
+plt.figure(figsize=(12, 6))
+dendrogram = sch.dendrogram(sch.linkage(StandardTransform.T, method = 'ward'))
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+plt.xlabel('指标',fontsize=13)
+plt.ylabel('离差平方和',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=11)
+plt.yticks(font='Times New Roman',fontsize=11)
+plt.savefig("Figures\\1-6 层次聚类树状图.pdf")
+
+
+# 环境：风向、风速
+# 人为操作：下降率、地速、起落架、G值、杆量、盘量、RUDD位置
+# 飞机状态：姿态（俯仰角）、坡度、发动机N1值、磁航向、油门杆位置、下滑道偏差、航向道偏差、俯仰角率
+
+# In[11]:
+
+
+IFactor=MinMaxTransform.loc[:,['风向','风速','下降率','地速','起落架',
+                               '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                               '姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4',
+                               '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                               '坡度（左负右正）','坡度（左负右正）.1',
+                               '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                               '左侧发动机油门N1值','右侧发动机油门N1值','磁航向',
+                               '左发油门杆位置（角度）','左发油门杆位置（角度）.1','右发油门杆位置（角度）','右发油门杆位置（角度）.1',
+                               'RUDD位置','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+                               '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）',
+                               '俯仰角率']]
+IFactor
+
+
+# In[12]:
+
+
+IFactorEnv=IFactor.loc[:,['风向','风速']]
+IFactorEnv
+
+
+# In[13]:
+
+
+IFactorPeo=IFactor.loc[:,['下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                          'RUDD位置',]]
+IFactorPeo
+
+
+# In[14]:
+
+
+IFactorMac=IFactor.loc[:,~IFactor.columns.isin(['风向','风速','下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4','RUDD位置',])]
+IFactorMac
+
+
+# In[15]:
+
+
+import copy
+def ewm(data):
+    label_need = data.keys()[:]
+    data1 = data[label_need].values
+    data2 = data1
+    [m, n] = data2.shape
+    data3 = copy.deepcopy(data2)
+    p = copy.deepcopy(data3)
+    for j in range(0, n):
+        p[:, j] = data3[:, j] / sum(data3[:, j])
+    e = copy.deepcopy(data3[0, :])
+    for j in range(0, n):
+        e[j] = -1 / np.log(m) * sum(p[:, j] * np.log(p[:, j]))
+    w = (1 - e) / sum(1 - e)
+    total = 0
+    for sum_w in range(0, len(w)):
+        total = total + w[sum_w]
+    print(f'权重为：{w}，权重之和为：{total}')
+
+
+# In[16]:
+
+
+ewm(IFactorEnv)
+
+
+# In[17]:
+
+
+ewm(IFactorPeo)
+
+
+# In[18]:
+
+
+ewm(IFactorMac)
+
+
+\end{python}
+\newpage
+\textbf{D.7 航班7数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# # 附件一预处理（不包括异常值剔除及标准化）
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_excel("Data\\First\\New\\201404100843.xlsx",sheet_name='201404100843')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+
+
+# In[5]:
+
+
+data.replace({"起落架":{'DOWN':1},
+              "空地电门0.2秒":{True:1,False:0},
+              "空地电门0.4秒":{True:1,False:0},
+              "空地电门0.6秒":{True:1,False:0},
+              "空地电门0.8秒":{True:1,False:0},
+              "空地电门1秒":{True:1,False:0},
+              "是否接通了A/T":{'DISENGD':0,'ENGAGED':1},
+              "是否接通了任意侧的A/P":{'OFF':0,'ON':1},
+              }, inplace=True)
+data
+
+
+# In[6]:
+
+
+data=data.fillna(0)
+data
+
+
+# In[7]:
+
+
+data.drop(labels=['月','日','起飞机场','落地机场','飞机重量'],axis=1,inplace=True)
+data
+
+
+# # QAR异常判断，剔除
+
+# In[8]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup', dup_row)
+data[data['is_dup'] == True]
+
+
+# In[9]:
+
+
+data=data.drop_duplicates(subset=['具体时间'],keep='first')
+data
+
+
+# In[10]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup_N', dup_row)
+data[data['is_dup_N'] == True]
+
+
+# In[11]:
+
+
+def function(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+
+
+data['bool'] = data.apply(lambda x : function(x['俯仰角率'],x['俯仰角率.1']),axis = 1)
+data
+
+
+# In[12]:
+
+
+data[data['bool']==0]
+
+
+# In[13]:
+
+
+data=data.drop(labels=['is_dup','is_dup_N','bool','具体时间','俯仰角率.1'],axis=1)
+data
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_csv('Data\\First\\NNew\\1-7D.csv')
+data
+
+
+# # 数据标准化
+
+# In[3]:
+
+
+import sklearn.preprocessing as sp
+StandardTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+StandardTransform
+
+
+# In[4]:
+
+
+ListColumns=list(StandardTransform.columns)
+ListColumns
+
+
+# In[5]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListColumns
+StandardTransform
+
+
+# # 数据归一化
+
+# In[6]:
+
+
+import sklearn.preprocessing as sp
+MinMaxTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+MinMaxTransform
+
+
+# In[7]:
+
+
+MinMaxTransformScaler=sp.MinMaxScaler(feature_range=(0.002, 1))
+MinMaxTransformScaler=MinMaxTransformScaler.fit(MinMaxTransform)
+MinMaxTransform=MinMaxTransformScaler.transform(MinMaxTransform)
+MinMaxTransform=pd.DataFrame(MinMaxTransform)
+MinMaxTransform.columns=ListColumns
+MinMaxTransform
+
+
+# # PCA&层次聚类
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[9]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(StandardTransform)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',fontsize=13)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=12)
+plt.yticks(font='Times New Roman',fontsize=12)
+plt.tight_layout()
+plt.savefig("Figures\\1-7 PCA Cumulative explained variance.pdf")
+
+
+# In[10]:
+
+
+import scipy.cluster.hierarchy as sch
+plt.figure(figsize=(12, 6))
+dendrogram = sch.dendrogram(sch.linkage(StandardTransform.T, method = 'ward'))
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+plt.xlabel('指标',fontsize=13)
+plt.ylabel('离差平方和',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=11)
+plt.yticks(font='Times New Roman',fontsize=11)
+plt.savefig("Figures\\1-7 层次聚类树状图.pdf")
+
+
+# 环境：风向、风速
+# 人为操作：下降率、地速、起落架、G值、杆量、盘量、RUDD位置
+# 飞机状态：姿态（俯仰角）、坡度、发动机N1值、磁航向、油门杆位置、下滑道偏差、航向道偏差、俯仰角率
+
+# In[11]:
+
+
+IFactor=MinMaxTransform.loc[:,['风向','风速','下降率','地速','起落架',
+                               '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                               '姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4',
+                               '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                               '坡度（左负右正）','坡度（左负右正）.1',
+                               '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                               '左侧发动机油门N1值','右侧发动机油门N1值','磁航向',
+                               '左发油门杆位置（角度）','左发油门杆位置（角度）.1','右发油门杆位置（角度）','右发油门杆位置（角度）.1',
+                               'RUDD位置','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+                               '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）',
+                               '俯仰角率']]
+IFactor
+
+
+# In[12]:
+
+
+IFactorEnv=IFactor.loc[:,['风向','风速']]
+IFactorEnv
+
+
+# In[13]:
+
+
+IFactorPeo=IFactor.loc[:,['下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                          'RUDD位置',]]
+IFactorPeo
+
+
+# In[14]:
+
+
+IFactorMac=IFactor.loc[:,~IFactor.columns.isin(['风向','风速','下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4','RUDD位置',])]
+IFactorMac
+
+
+# In[15]:
+
+
+import copy
+def ewm(data):
+    label_need = data.keys()[:]
+    data1 = data[label_need].values
+    data2 = data1
+    [m, n] = data2.shape
+    data3 = copy.deepcopy(data2)
+    p = copy.deepcopy(data3)
+    for j in range(0, n):
+        p[:, j] = data3[:, j] / sum(data3[:, j])
+    e = copy.deepcopy(data3[0, :])
+    for j in range(0, n):
+        e[j] = -1 / np.log(m) * sum(p[:, j] * np.log(p[:, j]))
+    w = (1 - e) / sum(1 - e)
+    total = 0
+    for sum_w in range(0, len(w)):
+        total = total + w[sum_w]
+    print(f'权重为：{w}，权重之和为：{total}')
+
+
+# In[16]:
+
+
+ewm(IFactorEnv)
+
+
+# In[17]:
+
+
+ewm(IFactorPeo)
+
+
+# In[18]:
+
+
+ewm(IFactorMac)
+
+
+\end{python}
+\newpage
+\textbf{D.8 航班8数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# # 附件一预处理（不包括异常值剔除及标准化）
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_excel("Data\\First\\New\\201404101159.xlsx",sheet_name='201404101159')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+plt.savefig('Figures\\附件1航班8缺失值.pdf')
+
+
+# In[5]:
+
+
+data=data.fillna(0)
+data
+
+
+# In[6]:
+
+
+data.drop(labels=['月','日','起飞机场','落地机场','飞机重量'],axis=1,inplace=True)
+data
+
+
+# # QAR异常判断，剔除
+
+# In[7]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup', dup_row)
+data[data['is_dup'] == True]
+
+
+# In[8]:
+
+
+data=data.drop_duplicates(subset=['具体时间'],keep='first')
+data
+
+
+# In[9]:
+
+
+dup_row = data.duplicated(subset=['具体时间'], keep=False)
+data.insert(0, 'is_dup_N', dup_row)
+data[data['is_dup_N'] == True]
+
+
+# In[10]:
+
+
+def function(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+
+
+data['bool'] = data.apply(lambda x : function(x['俯仰角率'],x['俯仰角率.1']),axis = 1)
+data
+
+
+# In[11]:
+
+
+data[data['bool']==0]
+
+
+# In[12]:
+
+
+data=data.drop(labels=['is_dup','is_dup_N','bool','具体时间','俯仰角率.1'],axis=1)
+data
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data=pd.read_csv('Data\\First\\NNew\\1-8D.csv')
+data
+
+
+# # 数据标准化
+
+# In[3]:
+
+
+import sklearn.preprocessing as sp
+StandardTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+StandardTransform
+
+
+# In[4]:
+
+
+ListColumns=list(StandardTransform.columns)
+ListColumns
+
+
+# In[5]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListColumns
+StandardTransform
+
+
+# # 数据归一化
+
+# In[6]:
+
+
+import sklearn.preprocessing as sp
+MinMaxTransform = data.loc[:,~data.columns.isin(['Unnamed: 0'])]
+MinMaxTransform
+
+
+# In[7]:
+
+
+MinMaxTransformScaler=sp.MinMaxScaler(feature_range=(0.002, 1))
+MinMaxTransformScaler=MinMaxTransformScaler.fit(MinMaxTransform)
+MinMaxTransform=MinMaxTransformScaler.transform(MinMaxTransform)
+MinMaxTransform=pd.DataFrame(MinMaxTransform)
+MinMaxTransform.columns=ListColumns
+MinMaxTransform
+
+
+# # PCA&层次聚类
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[9]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(StandardTransform)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',fontsize=13)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=12)
+plt.yticks(font='Times New Roman',fontsize=12)
+plt.tight_layout()
+plt.savefig("Figures\\1-8 PCA Cumulative explained variance.pdf")
+
+
+# In[10]:
+
+
+import scipy.cluster.hierarchy as sch
+plt.figure(figsize=(12, 6))
+dendrogram = sch.dendrogram(sch.linkage(StandardTransform.T, method = 'ward'))
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+plt.xlabel('指标',fontsize=13)
+plt.ylabel('离差平方和',fontsize=13)
+plt.xticks(font='Times New Roman',fontsize=11)
+plt.yticks(font='Times New Roman',fontsize=11)
+plt.savefig("Figures\\1-8 层次聚类树状图.pdf")
+
+
+# 环境：风向、风速
+# 人为操作：下降率、地速、起落架、G值、杆量、盘量、RUDD位置
+# 飞机状态：姿态（俯仰角）、坡度、发动机N1值、磁航向、油门杆位置、下滑道偏差、航向道偏差、俯仰角率
+
+# In[11]:
+
+
+IFactor=MinMaxTransform.loc[:,['风向','风速','下降率','地速','起落架','着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒','姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4','杆量','杆量.1','杆量.2','杆量.3','杆量.4','坡度（左负右正）','坡度（左负右正）.1','盘量','盘量.1','盘量.2','盘量.3','盘量.4','左侧发动机油门N1值','右侧发动机油门N1值','磁航向','左发油门杆位置（角度）','左发油门杆位置（角度）.1','右发油门杆位置（角度）','右发油门杆位置（角度）.1','RUDD位置','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）','航向道偏差（C）','航向道偏差（L）','航向道偏差（R）','俯仰角率']]
+IFactor
+
+
+# In[12]:
+
+
+IFactorEnv=IFactor.loc[:,['风向','风速']]
+IFactorEnv
+
+
+# In[13]:
+
+
+IFactorPeo=IFactor.loc[:,['下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4',
+                          'RUDD位置',]]
+IFactorPeo
+
+
+# In[14]:
+
+
+IFactorMac=IFactor.loc[:,~IFactor.columns.isin(['风向','风速','下降率','地速','起落架',
+                          '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                          '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                          '盘量','盘量.1','盘量.2','盘量.3','盘量.4','RUDD位置',])]
+IFactorMac
+
+
+# In[15]:
+
+
+import copy
+def ewm(data):
+    label_need = data.keys()[:]
+    data1 = data[label_need].values
+    data2 = data1
+    [m, n] = data2.shape
+    data3 = copy.deepcopy(data2)
+    p = copy.deepcopy(data3)
+    for j in range(0, n):
+        p[:, j] = data3[:, j] / sum(data3[:, j])
+    e = copy.deepcopy(data3[0, :])
+    for j in range(0, n):
+        e[j] = -1 / np.log(m) * sum(p[:, j] * np.log(p[:, j]))
+    w = (1 - e) / sum(1 - e)
+    total = 0
+    for sum_w in range(0, len(w)):
+        total = total + w[sum_w]
+    print(f'权重为：{w}，权重之和为：{total}')
+
+
+# In[16]:
+
+
+ewm(IFactorEnv)
+
+
+# In[17]:
+
+
+ewm(IFactorPeo)
+
+
+# In[18]:
+
+
+ewm(IFactorMac)
+
+
+\end{python}
+\newpage
+\textbf{D.9 问题二数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+def Sample(data):
+    data = data[['空地电门0.2秒','空地电门0.4秒','空地电门0.6秒','空地电门0.8秒','空地电门1秒',
+                 '着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒',
+                 '着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒',
+                 '姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4',
+                 '杆量','杆量.1','杆量.2','杆量.3','杆量.4',
+                 '坡度（左负右正）','坡度（左负右正）.1',
+                 '盘量','盘量.1','盘量.2','盘量.3','盘量.4']]
+    return data
+
+
+# In[3]:
+
+
+data1 = pd.read_excel('Data\\Two\\LandingData\\1.xlsx', sheet_name='Sheet1')
+data2 = pd.read_excel('Data\\Two\\LandingData\\2.xlsx', sheet_name='Sheet1')
+data3 = pd.read_excel('Data\\Two\\LandingData\\3.xlsx', sheet_name='Sheet1')
+data4 = pd.read_excel('Data\\Two\\LandingData\\4.xlsx', sheet_name='Sheet1')
+data5 = pd.read_excel('Data\\Two\\LandingData\\5.xlsx', sheet_name='Sheet1')
+data6 = pd.read_excel('Data\\Two\\LandingData\\6.xlsx', sheet_name='Sheet1')
+data7 = pd.read_excel('Data\\Two\\LandingData\\7.xlsx', sheet_name='Sheet1')
+data8 = pd.read_excel('Data\\Two\\LandingData\\8.xlsx', sheet_name='Sheet1')
+
+
+# In[4]:
+
+
+data1N = Sample(data1)
+data2N = Sample(data2)
+data3N = Sample(data3)
+data4N = Sample(data4)
+data5N = Sample(data5)
+data6N = Sample(data6)
+data7N = Sample(data7)
+data8N = Sample(data8)
+
+
+# In[5]:
+
+
+data1N.to_csv('Data\\Two\\LandingData\\1N.csv', index=False)
+data2N.to_csv('Data\\Two\\LandingData\\2N.csv', index=False)
+data3N.to_csv('Data\\Two\\LandingData\\3N.csv', index=False)
+data4N.to_csv('Data\\Two\\LandingData\\4N.csv', index=False)
+data5N.to_csv('Data\\Two\\LandingData\\5N.csv', index=False)
+data6N.to_csv('Data\\Two\\LandingData\\6N.csv', index=False)
+data7N.to_csv('Data\\Two\\LandingData\\7N.csv', index=False)
+data8N.to_csv('Data\\Two\\LandingData\\8N.csv', index=False)
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# In[2]:
+
+
+data1=pd.read_excel('Data\\Two\\Landing\\1Landing.xlsx',sheet_name='Sheet1')
+data2=pd.read_excel('Data\\Two\\Landing\\2Landing.xlsx',sheet_name='Sheet1')
+data3=pd.read_excel('Data\\Two\\Landing\\3Landing.xlsx',sheet_name='Sheet1')
+data4=pd.read_excel('Data\\Two\\Landing\\4Landing.xlsx',sheet_name='Sheet1')
+data5=pd.read_excel('Data\\Two\\Landing\\5Landing.xlsx',sheet_name='Sheet1')
+data6=pd.read_excel('Data\\Two\\Landing\\6Landing.xlsx',sheet_name='Sheet1')
+data7=pd.read_excel('Data\\Two\\Landing\\7Landing.xlsx',sheet_name='Sheet1')
+data8=pd.read_excel('Data\\Two\\Landing\\8Landing.xlsx',sheet_name='Sheet1')
+
+
+# In[3]:
+
+
+def draw(data,i):
+    data.fillna(method='ffill',axis = 0,inplace=True)
+    x=data['时刻']
+    y1=data['杆量']
+    y2=data['盘量']
+    y3=data['着陆G值']
+    y4=data['姿态（俯仰角）']
+    y5=data['坡度（左负右正）']
+    plt.rcParams['font.sans-serif']=['SimHei']
+    plt.rcParams['axes.unicode_minus']=False
+    plt.figure(figsize=(12, 6))
+    plt.plot(x, y1, ms=5, label='杆量', color="blue")
+    plt.plot(x, y2, ms=5, label='盘量', color="red")
+    plt.plot(x, y3, ms=5, label='着陆G值', color="green")
+    plt.plot(x, y4, ms=5, label='姿态（俯仰角）', color="black")
+    plt.plot(x, y5, ms=5, label='坡度（左负右正）', color="orange")
+    plt.xlabel('时刻',size=13)
+    plt.ylabel('量值',size=13)
+    plt.xticks(font='Times New Roman',size=12)
+    plt.yticks(font='Times New Roman',size=12)
+    plt.legend()
+    plt.savefig('Figures\\1-{} Landing.pdf'.format(i))
+
+
+# In[4]:
+
+
+draw(data1,1)
+
+
+# In[5]:
+
+
+draw(data2,2)
+
+
+# In[6]:
+
+
+draw(data3,3)
+
+
+# In[7]:
+
+
+draw(data4,4)
+
+
+# In[8]:
+
+
+draw(data5,5)
+
+
+# In[9]:
+
+
+draw(data6,6)
+
+
+# In[10]:
+
+
+draw(data7,7)
+
+
+# In[11]:
+
+
+draw(data8,8)
+
+
+\end{python}
+\newpage
+\textbf{D.10 问题四数据分析}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data = pd.read_excel('Data\\Third\\附件3：飞行参数测量数据（剔除C）.xlsx', sheet_name='数据')
+data
+
+
+# In[3]:
+
+
+data.info()
+
+
+# In[4]:
+
+
+data.isnull().sum()
+
+
+# In[5]:
+
+
+import missingno
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+missingno.bar(data, color=(190/255,190/255,190/255))
+plt.tight_layout()
+plt.savefig('Figures\\附件3缺失值.pdf')
+
+
+# In[6]:
+
+
+data.drop(labels=['机型','落地主操控',' V1_Method',' Vr_Method',
+                  ' EvtsEStoG2',' EvtsG2toG3',' EvtsTDG3toSD',' TO_V1',
+                  ' TO_V2',' Max(CAS-Vfe)F1',' Max(CAS-Vfe)F4',' Max(CAS-Vfe)F5',
+                  ' Max(CAS-Vfe)F6',' Max(CAS-Vfe)F7',' Max(CAS-Vfe)F8',' Max(CAS-Vfe)F9',
+                  ' Max(CAS-Vfe)F10',' Max(CAS-Vfe)Slat',' CAS-V2atG1',' Min(CAS-V2)TOtoG1',
+                  ' Max(CAS-V2)TOtoG1',' (CAS-V2)atG2',' Min(CAS-V2)G1toG2',' Max(CAS-V2)G1toG2',
+                  ' TD_Vref',' Max(CAS-Vfe)F2-1',' Max(CAS-Vfe)F6-1',' Max(CAS-Vfe)F7-1',
+                  ' Max(CAS-Vfe)F8-1',' Max(CAS-Vfe)F9-1',' Max(CAS-Vfe)F10-1',' Max(CAS-Vfe)Slat-1',
+                  ' SPDBKarmdTime',' SPDBKarmdAAL',' CAS-Vref_G3',' CAS-Vref_G2',
+                  ' Min(CAS-Vref)G3toG2',' Max(CAS-Vref)G3toG2',' Max(G S)TDG3toG2',' Min(G S)TDG3toG2',
+                  ' CAS-Vref_G1',' RoD_G1',' Pitch_G1',' Ave(PWR)_G1',
+                  ' Min(CAS-Vref)G2toG1',' Max(CAS-Vref)G2toG1',' Max(G S)TDG2toG1',' Min(G S)TDG2toG1',
+                  ' CAS-VrefAt50',' CAS-VrefAtTD',' Min(CAS-Vref)G1to50',' Max(CAS-Vref)G1toTD',
+                  ' MaxGlideSG1to100',' MinGlideSG1to100',
+                  ' TO Gate 1',' TO Gate 2',' TD Gate 3',' TD Gate 2',' TD Gate 1-1', ' TO_Vr'],axis=1,inplace=True)
+data
+
+
+# In[7]:
+
+
+data.isnull().sum()
+
+
+# In[8]:
+
+
+data.fillna(data.mode().iloc[0], inplace=True)
+data
+
+
+# In[9]:
+
+
+data.isnull().sum()
+
+
+# In[10]:
+
+
+data
+
+
+# In[11]:
+
+
+#标签编码
+import sklearn.preprocessing as sp
+le=sp.LabelEncoder()
+
+Competency=le.fit_transform(data["落地主操控人员资质"])
+V2Method=le.fit_transform(data[" V2_Method"])
+Vref_Method=le.fit_transform(data[" Vref_Method"])
+RoDMethod=le.fit_transform(data[" RoD_Method"])
+MACHMethod=le.fit_transform(data[" MACH_Method"])
+
+data["落地主操控人员资质"]=pd.DataFrame(Competency)
+data[" V2_Method"]=pd.DataFrame(V2Method)
+data[" Vref_Method"]=pd.DataFrame(Vref_Method)
+data[" RoD_Method"]=pd.DataFrame(RoDMethod)
+data[" MACH_Method"]=pd.DataFrame(MACHMethod)
+data
+
+
+# In[12]:
+
+
+#数据标准化
+StandardTransform = data.loc[:,~data.columns.isin(['落地主操控人员资质',' V2_Method',' Vref_Method',' RoD_Method',' MACH_Method'])]
+StandardTransform
+
+
+# In[13]:
+
+
+ListDataColumns=list(StandardTransform.columns)
+ListDataColumns
+
+
+# In[14]:
+
+
+StandardTransformScaler = sp.StandardScaler()
+StandardTransformScaler = StandardTransformScaler.fit(StandardTransform)
+StandardTransform = StandardTransformScaler.transform(StandardTransform)
+StandardTransform = pd.DataFrame(StandardTransform)
+StandardTransform.columns = ListDataColumns
+StandardTransform
+
+
+# In[15]:
+
+
+dataLeave=data[['落地主操控人员资质',' V2_Method',' Vref_Method',' RoD_Method',' MACH_Method']]
+dataLeave
+
+
+# In[16]:
+
+
+dataNew=pd.concat([dataLeave, StandardTransform],axis=1)
+dataNew
+
+
+# In[17]:
+
+
+y=dataNew["落地主操控人员资质"]
+X=dataNew.loc[:,~dataNew.columns.isin(['落地主操控人员资质'])]
+
+
+# In[18]:
+
+
+#数据集划分
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.1,random_state=2023)
+
+
+# In[19]:
+
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+DecisionTree = DecisionTreeClassifier(random_state=2023)
+DecisionTree = DecisionTree.fit(X_train, y_train)
+
+RandomForest = RandomForestClassifier(random_state=2023)
+RandomForest = RandomForest.fit(X_train, y_train)
+RandomForest_score = RandomForest.score(X_test, y_test)
+RandomForest_score
+
+
+# In[20]:
+
+
+std = np.std([i.feature_importances_ for i in RandomForest.estimators_], axis=0)
+importances = DecisionTree.feature_importances_
+feat_with_importance = pd.Series(importances, X.columns)
+fig, ax = plt.subplots(figsize=(24,10))
+feat_with_importance.plot.bar(yerr=std, ax=ax, color=(5/255,126/255,215/255))
+ax.set_ylabel("Mean decrease in impurity",font='Times New Roman',size=14)
+plt.yticks(font='Times New Roman',size=13)
+plt.xticks(font='Times New Roman',size=13)
+plt.tight_layout()
+plt.savefig('Figures\\feature_importance_RF.pdf')
+
+
+# In[21]:
+
+
+from xgboost import XGBClassifier
+
+XGB = XGBClassifier()
+XGB.fit(X_train, y_train)
+XGB_score = XGB.score(X_test, y_test)
+XGB_score
+
+
+# In[22]:
+
+
+from xgboost import plot_importance
+fig, ax = plt.subplots(figsize=(10,24))
+plot_importance(XGB, height=0.4, ax=ax)
+plt.xticks(fontsize=12, font='Times New Roman')
+plt.yticks(fontsize=12, font='Times New Roman')
+plt.tight_layout()
+plt.savefig('Figures\\feature_importance_XGB.pdf')
+
+
+# In[23]:
+
+
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(X)
+evr = pca.explained_variance_ratio_
+
+plt.figure(figsize=(12, 5))
+plt.plot(range(0, len(evr)), evr.cumsum(), marker="d", linestyle="-")
+plt.xlabel("Number of components",font='Times New Roman',size=14)
+plt.ylabel("Cumulative explained variance",font='Times New Roman',size=14)
+plt.xticks(font='Times New Roman',size=12)
+plt.yticks(font='Times New Roman',size=12)
+plt.tight_layout()
+plt.savefig('Figures\\资质PCA累计方差解释.pdf')
+
+
+# In[24]:
+
+
+#降维
+y=dataNew["落地主操控人员资质"]
+X=dataNew.loc[:,~dataNew.columns.isin(['落地主操控人员资质',' CASgearselected',' MinPRWTDG2toG1',' MaxLeft(LOC)TDG2toG1',' V2_Method',' MaxRight(LOC)TDG3toG2'])]
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.1,random_state=2023)
+
+
+# In[25]:
+
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+DecisionTree = DecisionTreeClassifier(random_state=2023)
+DecisionTree = DecisionTree.fit(X_train, y_train)
+
+RandomForest = RandomForestClassifier(random_state=2023)
+RandomForest = RandomForest.fit(X_train, y_train)
+RandomForest_score = RandomForest.score(X_test, y_test)
+RandomForest_score
+
+
+# In[26]:
+
+
+from xgboost import XGBClassifier
+
+XGB = XGBClassifier(random_state=2023,)
+XGB.fit(X_train, y_train)
+XGB_score = XGB.score(X_test, y_test)
+XGB_score
+
+
+# In[27]:
+
+
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
+
+
+# In[28]:
+
+
+print(f'XGBoost平均绝对误差：'
+      f'{mean_absolute_error(y_test, XGB.predict(X_test), sample_weight=None, multioutput="uniform_average")}\n'
+      f'XGBoost均方误差：'
+      f'{mean_squared_error(y_test, XGB.predict(X_test), sample_weight=None, multioutput="uniform_average")}')
+
+
+# In[29]:
+
+
+from yellowbrick.classifier import ROCAUC
+classes=['A','F','J','M','T']
+visualizer = ROCAUC(XGB, classes=classes)
+visualizer.fit(X_train, y_train)
+visualizer.score(X_test, y_test)
+plt.xticks(font='Times New Roman')
+plt.yticks(font='Times New Roman')
+visualizer.show(outpath='Figures\\ROCAUC.pdf')
+
+
+# In[30]:
+
+
+from yellowbrick.classifier import ConfusionMatrix
+classes=['A','F','J','M','T']
+confusion_matrix = ConfusionMatrix(XGB, classes=classes)
+confusion_matrix.fit(X_train, y_train)
+confusion_matrix.score(X_test, y_test)
+plt.xticks(font='Times New Roman',rotation=0)
+plt.yticks(font='Times New Roman')
+confusion_matrix.show(outpath='Figures\\ConfusionMatrix.pdf')
+
+
+# In[31]:
+
+
+from yellowbrick.classifier import ClassificationReport
+visualizer = ClassificationReport(XGB, classes=classes, support=True, cmap='Greens')
+visualizer.fit(X_train, y_train)
+visualizer.score(X_test, y_test)
+plt.xticks(font='Times New Roman')
+plt.yticks(font='Times New Roman')
+visualizer.show(outpath='Figures\\ClassificationReport.pdf')
+
+
+# In[32]:
+
+
+from sklearn.model_selection import cross_val_score
+XGB_5K = cross_val_score(estimator=XGB,X=X_train,y=y_train,cv=5)
+print(XGB_5K, '\n', XGB_5K.mean())
+print(XGB_5K.std())
+
+
+\end{python}
 \end{document}
