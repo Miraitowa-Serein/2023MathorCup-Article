@@ -4,16 +4,29 @@
 \usepackage{mwe,color,float}
 \usepackage[linesnumbered,ruled]{algorithm2e}
 \usepackage{setspace}
+\usepackage{colortbl}
 \everymath{\displaystyle}
 
-\extrafloats{100}
+\extrafloats{500}
 \bianhao{MC2305806}
 \tihao{D}
-\timu{\textbf{题目}}
-\keyword{关键词两个之间分号隔开}
+\timu{\textbf{基于QAR数据的实时安全分析与预警系统}}
+\keyword{QAR数据；PCA-CVCR；RF-XGboost；自动化智能预警；实时监测}
 \begin{document}
 	\begin{abstract}
-		这里是摘要部分
+		当今，我国民航业快速发展，而飞行安全的重要性也不言而喻。严重的飞行事故的发生不仅会使航空公司蒙受巨大损失还会极大地威胁乘客的生命安全。那么如何强化科学管理，科学有效提高从业人员素质，及时监测和预警风险，降低飞行事故发生概率呢？为解决以上问题，本文将\textbf{利用飞机上所搭载的快速存取记录器（QAR）所记录的数据进行处理分析与建模}。
+
+		{\heiti 针对问题一}，\textbf{主要需要对QAR数据进行预处理、分析研究数据质量的可靠性、提取与飞行安全的关键性因素，并定性定量分析}。由于QAR所记录的数据体量大、维度高，因此本文对表格以时间序列为标准进行筛选并多方面详细分析，以减少错误数据对后续建模的影响。同时，本文对附件1中的数据进行可靠性研究，再以\textbf{主成分分析累计方差解释}与\textbf{层次聚类法}提取关键性因素，筛选出的重要性指标见\textcolor{blue}{\nameref{确定指标}}。此外，本文对上述指标进行定性及定量分析，结果见\textcolor{blue}{\cref{tab:重要指标量化}}及\textcolor{blue}{\cref{fig:权重组合}}。
+
+		{\heiti 针对问题二}，\textbf{主要需要对飞行过程中机组人员对飞行的异常操作进行量化描述}。为及时分析出飞机状态出现偏差的原因，本文在问题一的基础上，对8次飞行的数据进行筛选整理，由于着陆阶段的操纵较为关键，且较易出现超限事件，故本文重点分析8次航班的降落过程，并以$\boldsymbol{10\,\text{Hz}}$频率为间隔，选取\textbf{落地瞬间前9秒至降落后9秒间重要数据}，并将其可视化，进行\textbf{实时监测}。之后，依据时刻参量变化，本文对附件1的8次航班均的降落过程进行详细的操纵分析，结果见\textcolor{blue}{\nameref{问题二结果}}。
+
+		{\heiti 针对问题三}，\textbf{主要需要对附件2超限情形进行筛选处理、分析超限事件发生的各种情形、总结不同超限事件的基本特征}。因此本文从“超限事件-季度”，“超限事件-飞行阶段”，“超限事件-航线”“警告级别-飞行阶段”四方面进行统计分析，从多方面分析超限的基本特征。
+
+		{\heiti 针对问题四}，\textbf{主要需要基于飞行参数对飞行员的技术进行评估}。首先对附件3进行数据的预处理，包括但不局限于缺失值处理、异常值处理、列指标分析、标签编码等。之后利用\textbf{PCA累计解释方差}确定重要程度较高的指标个数，再通过\textbf{随机森林}及\textbf{XGboost}模型综合得出与飞行技术重要程度较高的因素。最后建立XGboost\textbf{多分类预测模型}，预测准确率可达$\boldsymbol{85\,\%}$。从而得到了基于飞行参数的飞行技术评估方法。此外，本文还对模型多项指标进行分析，效果良好，分析模型预测的合理性。
+
+		{\heiti 针对问题五}，\textbf{主要需要建立自动化智能预警机制系统，预防可能发生的安全事故}。因此，本文综合上述问题的分析，建立综合多方面因素影响的自动化智能预警机制系统，且设定超限阈值，对附件1的8次航班进行全面分析，进行实时监测，最终得到仿真结果。
+
+		最后，本文对所建立的模型进行中肯评价、提出改进措施，并对模型进行一定推广。
 	\end{abstract}
 
 	\pagestyle{empty}
@@ -24,16 +37,12 @@
 	\setcounter{page}{1}
 	\section{问题的提出}
 	\subsection{问题背景}
-	改革开放以来，我国民航业蓬勃发展，越来越多的乘客选择乘坐飞机出行，飞行安全的重要性不言而喻。截至2022年3月21日，即“3.21”空难发生前，我国民航安全飞行达1亿零59万飞行小时，为我国历史最好安全记录。严重的飞行安全事故不仅会使航空公司蒙受经济损失，还威胁着乘客的生命财产安全。为科学管理，降低飞行事故发生的几率，综合现有数据进行监测并预警风险，总结出具有针对性和系统性的方案提升从业人员素质显得尤为重要。在航空安全数据分析中快速存取记录器（Quick Access Recoder，QAR）发挥着重要作用。目前我国民航业主要研究两方面：
-	\begin{itemize}
-		\item 超限事件的研究，分析及应用；
-		\item 非超限数据的统计分析及应用。
-	\end{itemize}其中，对于前者的分析着眼于超出阈值的部分，然而超出阈值的部分不完全是人为因素，可能为环境或飞机本身存在一定问题，若基于非人为因素对机组严以要求显然是不合理的。QAR超限可为航空安全管理和飞行训练提供数据支撑，而少量的QAR超限显然不具有说服性，故挖掘QAR全航段数据，基于不同飞行机组，航线，机场及特殊飞行条件下的飞行记录，建立数学模型，并分析之，评估各指标风险系数，针对性开展安全培训，排除安全隐患，改进安全绩效。
+	改革开放以来，我国民航业蓬勃发展，越来越多的乘客选择乘坐飞机出行，飞行安全的重要性不言而喻。截至2022年3月21日，即“3.21”空难发生前，我国民航安全飞行达1亿零59万飞行小时，为我国历史最好安全记录。严重的飞行安全事故不仅会使航空公司蒙受经济损失，还威胁着乘客的生命财产安全。为科学管理，降低飞行事故发生的概率，综合现有数据进行监测并预警风险，总结出具有针对性和系统性的方案提升从业人员素质显得尤为重要。在航空安全数据分析中快速存取记录器（Quick Access Recoder，QAR）发挥着重要作用。目前我国民航业主要研究两方面：{\heiti 一是}，对超限事件的研究，分析及应用；{\heiti 二是}，非超限数据的统计分析及应用。其中，对于前者的分析着眼于超出阈值的部分，然而超出阈值的部分不完全是人为因素，可能为环境或飞机本身存在一定问题，若基于非人为因素对机组严以要求显然是不合理的。QAR超限可为航空安全管理和飞行训练提供数据支撑，而少量的QAR超限显然不具有说服性，故挖掘QAR全航段数据，基于不同飞行机组，航线，机场及特殊飞行条件下的飞行记录，建立数学模型，并分析之，评估各指标风险系数，针对性开展安全培训，排除安全隐患，改进安全绩效。
 	\subsection{问题要求}
 	\begin{itemize}
 		\item \textbf{问题一}：由于QAR数据并不能保证绝对正确性，故应进行数据预处理减少错误数据干扰。在此基础上对附件1进行可靠性研究，提取关键数据项并分析重要程度。
-		\item \textbf{问题二}：飞行过程往往通过一系列飞行操纵如：横滚、俯仰等以保证安全。国内航司主要以超限监控飞行动态，虽然能够快速分辨飞机状态偏差，但无法在较短时间内知道原因。为解决此问题，请依据附件1合理量化描述飞行操纵。
-		\item \textbf{问题三}：除人为，环境，飞机本身缺陷外等因素外，仍有一定因素会影响超限的发生。请依据附件2分情况讨论超限并研究其基本特征。
+		\item \textbf{问题二}：飞行过程往往通过一系列飞行操纵如：横滚、俯仰等以保证安全。国内航司主要以超限监控飞行动态，虽然能够快速分辨飞机状态偏差，但无法在较短时间内知道原因。为解决此问题，依据附件1合理量化描述飞行操纵。
+		\item \textbf{问题三}：除人为，环境，飞机本身缺陷外等因素外，仍有一定因素会影响超限的发生。依据附件2分情况讨论超限并研究其基本特征。
 		\item \textbf{问题四}：飞机运行数据研究往往由两大类组成，一类由LOSA获取，另一类则遵从相关学者建议，开展飞行技术评估。请依据附件3，建立数学模型以合理分析评估飞行员飞行技术。
 		\item \textbf{问题五}：在QAR实现陆空实时传输的情况下，以航司安全管理人员的身份建立实时自动化预警机制，预防可能的安全事故，并依据附件1给出仿真结果。
 	\end{itemize}
@@ -46,50 +55,72 @@
 
 	\textbf{从数据来源、特征看}，本题的数据来源于某航司2013-2017年随机快速存取记录器（QAR）。数据包括2014年7月5日至2014年10月11日部分时段某些航线完整飞行数据；2015年至2016年间相关航线超限数据；2013年至2017年间A机型落地主操作人员资质及相关飞行数据。飞行及超限数据量较大且影响飞行及超限数据的因素具有存在无效值、高维、复杂等特征。因此本题数据较为特殊且复杂，需对数据进行预处理，便于后续问题的分析。
 	
-	\textbf{从模型的选择看}，
+	\textbf{从模型的选择看}，本题数据量较大、维度较高，且需要分析多趟航班整体情况、基于飞行参数评估机组人员技术水平及多方面指标，因此本文选择PCA模型进行降维，利用层次聚类进行综合分析指标，利用随机森林、XGBoost模型进行多分类的预测学习。
 
-	\textbf{从编程软件的选择看}，本题为大数据分析类，需要进行大量的数据预处理、数据分析、数据可视化，并依据各设问建立预警自动化只能预警机制，因此我们选择Python Jupyter对问题进行求解，其交互式的编程范式及轻量化，方便且高效。
+	\textbf{从编程软件的选择看}，本题为大数据分析类，需要进行大量的数据预处理、数据分析、数据可视化，并依据各设问建立预警自动化智能预警机制，因此我们选择Python Jupyter对问题进行求解，其交互式的编程范式及轻量化，方便且高效。
 	
 	\subsection{问题一的分析}
-	问题一的核心目的有以下几点：{\heiti 其一}，\textbf{对真实的QAR数据进行预处理，去伪存真}；{\heiti 其二}，\textbf{分析研究附件一数据质量的可靠性}；{\heiti 其三}，\textbf{提取一项飞行安全的关键性因素，并定性及定量分析}。对于已给的数据集，数据在真实性、完整度、指标标准等方面存在一定缺陷，这导致我们在原始数据上不可直接进行分析，因此需要对其进行相应的预处理。此外附件1为8次航班的由起飞到降落的全过程的QAR数据，数据体量大，因此我们需要由特殊到一般，建立普适性模型，高效分析多张数据表格；同时我们还发现，数据维度较高，为得到关键性因此，考虑累计方差解释、层次聚类分析及熵权法，确定重要度较高指标，并对筛选出的指标进行合理性分析。
+	问题一的核心目的有以下几点：{\heiti 其一}，\textbf{对真实的QAR数据进行预处理，去伪存真}；{\heiti 其二}，\textbf{分析研究附件一数据质量的可靠性}；{\heiti 其三}，\textbf{提取与飞行安全的关键性因素，并定性及定量分析}。对于已给的数据集，数据在真实性、完整度、指标标准等方面存在一定缺陷，这导致我们在原始数据上不可直接进行分析，因此需要对其进行相应的预处理。此外附件1为8次航班的由起飞到降落的全过程的QAR数据，数据体量大，因此我们需要由特殊到一般，建立普适性模型，高效分析多张数据表格；同时我们还发现，数据维度较高，为得到关键性因此，考虑累计方差解释、层次聚类分析及熵权法，确定重要度较高指标，并对筛选出的指标进行合理性分析。
 	\subsection{问题二的分析}
-	问题二的核心目的在于\textbf{对着陆时的飞行操纵进行量化描述}。由于在飞行过程中，航空公司只能监测到飞机飞行时的操纵动作，虽然能分辨出是否否出现偏差，确无法得出原因，因此我们需要对操纵进行量化描述。通过预处理后附件一的数据，我们绘制出了八个航线飞机的状态和操纵随时间变化的曲线图，通过曲线的突变，来合理分析发生偏差的原因。
+	问题二的核心目的在于\textbf{对飞行过程中机组人员对飞行的异常操作进行量化描述}。由于在飞行过程中，航空公司只能监测到操纵动作，虽然能分辨出是否出现偏差，却无法得出原因。因此我们需要对操纵进行量化描述。通过预处理后附件一的数据，我们绘制出了八个航线飞机的状态和操纵随时间变化的曲线图，通过曲线的突变，来合理分析发生偏差的原因。
 	\subsection{问题三的分析}
 	问题三的核心目的有以下几点：{\heiti 其一}，\textbf{基于附件2中的数据对所有超限情形进行筛选，分类处理}；{\heiti 其二}，\textbf{分析超限事件发生的各种情形}；{\heiti 其三}，\textbf{总结研究得出不同超限的基本特征}。对于所给定的数据集，数据多且杂乱无章，我们无法直接分析，故我们对附件2中的数据进行了筛选，剔除了空白和未知部分的无效数据，而后对各超限情形进行了分类，共分为6类。考虑到数据集提供了日期，起飞机场，目的机场等数据，故我们从季节，航线，机场等角度进行了统计，为便于分析，我们将相关情形做出可视化处理并建立模型，而后对其进行研究以得出不同超限的基本特征。
 	\subsection{问题四的分析}
 	问题四的核心目的在于\textbf{基于飞行参数对飞行员的技术进行评估}。但是附件3与附件1同样在数据完整度、指标标准等方面存在一定缺陷，因此我们也需要对其进行一定的预处理；同时，我们还发现附件3维度更高，飞行参数较多，对于模型的效率有一定影响，因此我们沿用问题一的想法，以累计方差解释确定重要因素较高的指标的个数，再以随机森林及极端梯度提升算法综合分析出与飞行员飞行技术重要程度较高的因素。但我们还发现，附件3中，飞行员资质为“C”类的占比仅为整体的$0.844\,\%$，因此我们综合多方面考虑，选择将该两项数据单独分析，剩余数据视为多分类预测。最后以筛选出的重要指标为自变量，飞行员的“不同资质”，即不同技术级（除“C”类）别为因变量，建立XGboost多分类预测模型，从而建立出基于飞行参数的飞行技术评估方法。同时，为探讨模型效果，我们绘制出模型的{\heiti 分类混淆矩阵热力图}、{\heiti 分类报告}、{\heiti ROC/AUC	曲线}等对预测结果进行合理性分析。
 	\subsection{问题五的分析}
-
+	问题五的核心目的在于\textbf{建立自动化智能预警机制系统，预防可能的安全事故}。因此，我们综合问题一、二、三、四的分析，建立综合多方面因素影响的自动化智能预警机制系统，设定超限阈值，对附件1的8次航班进行全面分析，实时监测，最终得到仿真结果。
 	\section{模型的假设}
 	\begin{itemize}
-		\item \textbf{假设一}：
-		\item \textbf{假设二}：
-		\item \textbf{假设三}：
-		\item \textbf{假设四}：
+		\item \textbf{假设一}：假设问题中所涉机型为适航的普通民航机型及普通小型飞机。
+		\item \textbf{假设二}：假设机上所载QAR设备处于理想环境，即处于正常工作状态。
+		\item \textbf{假设三}：假设飞行数据已能实现陆空实时传输，延时低。
 	\end{itemize}
-	\section{符号说明}，
+	\section{符号说明}
 	\begin{center}
 		\begin{tabularx}{0.7\textwidth}{c@{\hspace{1pc}}|@{\hspace{2pc}}X}
 			\Xhline{0.08em}
 			符号 & \multicolumn{1}{c}{符号说明}\\
 			\Xhline{0.05em}
 			$\mu$ & 样本平均数 \\
-			$\alpha$ & 系数 \\
-			$\beta$ & \\
-			$\omega$ & \\
-			$\sigma$ & 标准差 \\
+			$\sigma$ & 样本标准差 \\
+			$x_{\mathrm{standard}}$ & 经过标准化后的数据\\
+			$R\left(x\right)_{m\times n}$ & 经过某项处理后的数据特征集\\
+			$\hat{y}$ & 预测值\\
+			$L^{\left(t\right)}$ & 目标函数\\
+			$\omega$ & 权重\\
 			\Xhline{0.08em}
 		\end{tabularx}
 	\end{center}
 
+	\textbf{注：}这里并未列出部分变量，这是由于它们在不同的章节处有不同的含义，因此我们会在每一节中详细讨论它们。
 	\section{模型的建立与求解}
 	对于本题，本文模型的建立与求解部分主要分为数据的准备，模型的建立、求解、结果分析。
 	\begin{itemize}
 		\item \textbf{数据的准备}：对于给定的数据集进行预处理，方便后续模型的建立，以及多次航班的规范分析。
 		\item \textbf{模型的建立、求解、结果分析}：对于给定的数据集，本文依据其特点，建立合适的模型，研究并量化分析影响飞行安全的因素。此外还需要分析飞行阶段操纵杆的过程变化情况，分析安全性。同时，还需要依据飞行参数对驾驶员飞行技术进行预测，并解释预测的合理性。最后需要结合上述问题，建立自动化智能预警机制，预防可能的安全事故的发生，给出仿真结果。
 	\end{itemize}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.4\textwidth]{思维导图.pdf}
+		\caption{问题解决流程}
+	\end{figure}
 	\subsection{问题一模型的建立与求解}
 	对于问题一，我们首先分析数据的特点，依据时间特征及对应的各参量进行合理性分析，对错误值进行剔除，提高数据的真实性，并以此分析数据的可靠性；之后我们依据刘柳\textcolor{blue}{\cite{Paper:刘柳}}、龙海江\textcolor{blue}{\cite{Paper:龙海江}}学者的研究结成果，采用层次聚类法对多维度指标进行聚类分析，同时在此基础上利用主成分分析累计方差解释，确定影响飞行安全的关键性指标，并利用熵权法对其重要性进行量化分析。此外注重定性及定量的分析研究，结果与现实情况相近，选取结果良好。
+
+	同时为了下文叙述方便，我们对附件1的8张表格进行命名，见\textcolor{blue}{\cref{tab:命名}}。
+\begin{table}[htbp]
+	\centering
+	\caption{附件1表格命名航班对应}
+	\scalebox{0.85}{
+	  \begin{tabular}{ccccc}
+	  \rowcolor[rgb]{ .843,  .89,  .737} \textbf{文件名} & 201404070532  & 201404071917  & 201404080617  & 201404081034  \\
+	  \textbf{航班号} & 航班1   & 航班2   & 航班3   & 航班4 \\
+	  \rowcolor[rgb]{ .843,  .89,  .737} \textbf{文件名} & 201404090110  & 201404091701  & 201404100843  & 201404101159  \\
+	  \textbf{航班号} & 航班5   & 航班6   & 航班7   & 航班8 \\
+	  \end{tabular}}
+	\label{tab:命名}
+  \end{table}
+  
 	\subsubsection{附件1数据预处理及可靠性研究}
 	通过对附件1的8个Excel表格依此分析，并结合快速存取记录器（Quick Access Recoder，QAR）数据的特点，我们发现以下几点可能的错误方面：
 	\begin{itemize}
@@ -150,7 +181,7 @@
 	这里，我们结合实际分析，认为空缺值均应填充为“NON-DOWN”，即此时起落架为收起状态，理由如下：
 	\begin{itemize}
 		\item “起落架”该列数据存在的均为“DOWN”，即起落架状态为放下状态，结合具体时刻，我们可以发现为飞机运行的开始阶段与将要结束阶段，因此中间的缺失值视为在空中正常飞行阶段；
-		\item 结合“海拔”、“空地电门”等多项列数据进行分析，可以验证上述我们的猜想，即中间段“起落架”的缺失值均为“NON-DOWN”。
+		\item 结合“海拔”“空地电门”等多项列数据进行分析，可以验证上述我们的猜想，即中间段“起落架”的缺失值均为“NON-DOWN”。
 	\end{itemize}
 
 	因此在这里我们首先以该值进行填充，而其余处理也将在后续展开叙述。此外，我们发现除该列数据缺失，其余列数据均无一缺失，则无需再进行填充处理。
@@ -228,7 +259,7 @@
 			y_3=\boldsymbol{u}_{1n}x_1+\boldsymbol{u}_{2n}x_2+\cdots +\boldsymbol{u}_{nn}x_n\\
 		\end{array} \right. 
 	\end{equation}
-	其中$y_n$是第$n$个主成分，再计算个主成分的贡献率$\gamma_n$及累计贡献率$\alpha_p$
+	其中$y_n$是第$n$个主成分，再计算各个主成分的贡献率$\gamma_n$及累计贡献率$\alpha_p$
 	\begin{equation}
 		\gamma_n=\frac{\lambda_n}{\sum\limits_{i=1}^n\lambda_i}
 	\end{equation}
@@ -280,7 +311,7 @@
 	\end{figure}
 
 	根据以上结果，并结合附件1的其余7次航班分析结果，我们最终确定“人-机-环”评级体系，即三方面：人为操作、机器状态、环境干预。并依据社会实际情况，确定了最终三个层面的共计47个指标，但实际上，一部分指标是一种指标不同时刻的量值。因此，在这里我们将其进行合理性合并，最终得到三个层面共计19项与飞机飞行安全高度相关的指标，即：
-	\begin{itemize}
+	\begin{itemize}\label{确定指标}
 		\item \textbf{环境干预}：风向、风速；
 		\item \textbf{人为操作}：下降率、地速、起落架、着陆G值、杆量、盘量、RUDD位置；
 		\item \textbf{飞机状态}：姿态（俯仰角）、航向道偏差、磁航向、左侧发动机油门N1值、右侧发动机油门N1值、下滑道偏差、左发油门杆位置（角度）、右发油门杆位置（角度）、坡度（左负右正）、俯仰角率。
@@ -327,7 +358,7 @@
 
 	在这里，我们需要注意，附件1并未给出此刻飞行的安全状态，即属于无标签类型数据。因此，我们在这里无须对其进行评价分析，而是获取其特征性数据，用于后续筛选重要性指标。从而对于上述的\textbf{Step 1}我们无须进行，即直接进行\textbf{Step 2}至\textbf{Step 4}的计算。
 
-	通过上述步骤，我们分别计算出三层方面下各自因素的权重，并对其余7次航班均作一致处理，得到各航班不通指标的权重，再计算平均值得到最终量化结果。此外，我们还计算出其方差与标准差，确定置信区间以及分析量化结果的合理性，结果见\textcolor{blue}{\cref{tab:重要指标量化}}。同时我们还绘制权重组合图，如\textcolor{blue}{\cref{fig:权重组合}}所示。
+	通过上述步骤，我们分别计算出三层方面下各自因素的权重，并对其余7次航班均作一致处理，得到各航班不同指标的权重，再计算平均值得到最终量化结果。此外，我们还计算出其方差与标准差，确定置信区间以及分析量化结果的合理性，结果见\textcolor{blue}{\cref{tab:重要指标量化}}。同时我们还绘制权重组合图，如\textcolor{blue}{\cref{fig:权重组合}}所示。
 \begin{table}[H]
 	\centering
 	\caption{影响飞行安全的19个重要指标从属于三个层级的量化值结果}
@@ -390,8 +421,8 @@
 	
 	因此，对于问题二，我们在问题一的基础上，以$10\,\text{Hz}$为频率，选取接地前9秒及接地后9秒主要相关数据，共计19秒数据，精确到0.1秒。共8组数据，即8次航班，依此建立“着陆监控预警”模型，依据模型对降落过程中的飞行操纵进行合理性定性与定量描述。
 	\subsubsection{模型的建立}
-	首先我们依据QAR数据特点，以时间序列为自变量，并结合问题一的重要性指标，选取“杆量”“盘量”“着陆G值”“姿态（俯仰角）”及“坡度”为主要因素建立了“着陆监控预警”模型并将各航班着落过程量值可视化。这里我们以“空地电门”“降落杆”等因素来判断飞机落地瞬间。因此在后学绘制可视化监控图时，我们以降落时刻所在秒为$0$时刻，则落地前为负时刻，滑行阶段为正时刻。
-	\subsubsection{模型的求解与结果分析}
+	首先我们依据QAR数据特点，以时间序列为自变量，并结合问题一的重要性指标，选取“杆量”“盘量”“着陆G值”“姿态（俯仰角）”及“坡度”为主要因素建立了“着陆监控预警”模型并将各航班着陆过程量值可视化。这里我们以“空地电门”“降落杆”等因素来判断飞机落地瞬间。因此在后学绘制可视化监控图时，我们以降落时刻所在秒为$0$时刻，则落地前为负时刻，滑行阶段为正时刻。
+	\subsubsection{模型的求解与结果分析}\label{问题二结果}
 	由于8次航班数据过多，绘制图形篇幅过大，因此在正文部分我们展示具有代表性的航班1、航班3、航班7、航班8，其余图示可在附录中查看。
 	\begin{itemize}
 		\item \textbf{针对“航线1”}，预警可视化图见\textcolor{blue}{\cref{fig:1-1}}。我们发现在航线1中着陆的前3秒和后1秒盘量有明显下降，坡度发生较大变化，我们分析认为是在降落过程中遇到突发情况，如遇到大风、雨雪等恶劣天气，使得飞行机组被迫做出调整以防止偏离航线。
@@ -412,17 +443,17 @@
 		\end{figure}
 		\item \textbf{针对“航线4”}，预警可视化图见\textcolor{blue}{\cref{fig:1-4}}。航线4杆量变化较为平缓，高度下降较为缓和，但在降落前7.5s至降落后2s内，其飞行姿态始终保持向左偏转的状态，我们认为其遭遇了较强横风或类似恶劣天气，破坏了飞机的稳定状态。
 
-		\item \textbf{针对“航线5”}，预警可视化图见\textcolor{blue}{\cref{fig:1-5}}。此次降落在0-2.5s的时间段内总体下降较为平缓，但在2.5s至5.0s这一时间段内下降突然加快，我们分析认为这可能于人为干预有关，如：50ft至接地距离过远，飞行员须尽快使飞机接地，并脱离跑道。
+		\item \textbf{针对“航线5”}，预警可视化图见\textcolor{blue}{\cref{fig:1-5}}。此次降落在0-2.5s的时间段内总体下降较为平缓，但在2.5s至5.0s这一时间段内下降突然加快，我们分析认为这可能与人为干预有关，如：50ft至接地距离过远，飞行员须尽快使飞机接地，并脱离跑道。
 
 		\item \textbf{针对“航线6”}，预警可视化图见\textcolor{blue}{\cref{fig:1-6}}。此模型从杆量和盘量的角度来看变化幅度较小，总体较为平稳。但我们发现，其坡度变化较为明显，我们分析认为其在降落过程中飞行速度较慢同时遭遇大风或顺风情形，致使飞机摆动，在7.5s之后，即起落架完全接地后杆量发生了较大突变，我们认为此次着陆过程中接地偏重。
-
-		\item \textbf{针对“航线7”}，预警可视化图见\textcolor{blue}{\cref{fig:1-7}}。在此次着陆过程中，我们发现在起落架完全接地后杆量并未发生明显变化，此次降落过程较为平缓。值得注意的是，此次航班降落过程中整体向右偏转，我们认为飞机在降落过程中遭遇了较强横风，一定程度上影响了飞机的坡度，干扰飞行员正常的飞行操作。
 		\begin{figure}[H]
 			\centering
 			\includegraphics[width=0.70\textwidth]{1-7 Landing.pdf}
 			\caption{航班7 着陆过程指标量值实时监视}
 			\label{fig:1-7}
 		\end{figure}
+		\item \textbf{针对“航线7”}，预警可视化图见\textcolor{blue}{\cref{fig:1-7}}。在此次着陆过程中，我们发现在起落架完全接地后杆量并未发生明显变化，此次降落过程较为平缓。值得注意的是，此次航班降落过程中整体向右偏转，我们认为飞机在降落过程中遭遇了较强横风，一定程度上影响了飞机的坡度，干扰飞行员正常的飞行操作。
+
 		\item \textbf{针对“航线8”}，预警可视化图见\textcolor{blue}{\cref{fig:1-8}}。在此次着陆过程中，飞行员选择了保持相对稳定的姿态（俯仰角）着陆，从杆量变化来看，在飞机完全接地时，杆量变化量极小，可见此次降落的接地过程较为平稳，进近过程受环境影响大，飞机摆动较大。
 		\begin{figure}[H]
 			\centering
@@ -431,7 +462,11 @@
 			\label{fig:1-8}
 		\end{figure}
 	\end{itemize}
+\subsubsection{飞行安全定性分析}
+在这一部分中我们将就现有数据分析可能促使超限事件发生的因素。
 
+我们比较了2015及2016年某地区航线中发生超限事件总数，如下图所示。显然，两者差别并不明显，而若将其细化至各季度，我们发现两者一二季度超限事件总数均明显高于三四季度超限事件总数。我们认为该地区冬春季节气候较为复杂，可能存在如：天气多变；降雨、降雪多；温度偏低等情况。而这些情况往往会导致一些威胁飞行安全的情况发生，如：风切变；降雨云团阻挡进近路线，机翼和尾翼在穿越积雨云或厚积云后发生结霜现象，显著影响飞机的空气动力学特性，升力减小，据研究表明在上述情况中总阻力值增加70 \% $\sim$ 80 \%；风挡模糊或结冰，飞行员目视距离不足；跑道湿滑等。这些往往会导致“50英尺对接地距离远”“进近速度/坡度大”“着陆垂直载荷大”“离地速度大”等现象。对数据进一步筛选，我们发现超限事件往往发生在起飞、降落、进近这三个飞行速度较慢的过程，上文所提及可能的现象也恰巧属于这三类之内。据现有数据，此三类事件占超限事件总数的74.14 \%，一二季度占其中53.49 \%。我们不妨做一个比较：2015年一二季度较三四季度多出827起\textcolor{blue}{\footnote{该处数据来源于附件2，对于该部分的分析，在问题三中，我们也将进行详细叙述}}，2016年一二季度较三四季度更是多出了1338起，这些现象足以证明不同的季度会对飞行员的飞行操作造成一定的影响，造成超限事件的发生。
+综上所述，除人为因素外，时间（季度）因素也是影响飞行安全的重要原因之一。
 
 	\subsection{问题三模型的建立与求解}
 	对于问题三，我们建立了“超限事件-季度”，“超限事件-飞行阶段”，“超限事件-航线”“警告级别-飞行阶段”分析模型架构，尽可能多维分析超限的不同的情况及基本特征。
@@ -439,7 +474,7 @@
 	附件2中主要提供了“警告级别”“机号”“目的机场”“时间日期”“起飞机场”“超限名称”“飞行阶段”以及“月份”的数据，首先我们对数据进行了预处理，剔除超限名称中“未知”及空白部分的无用数据集，而后我们比较了各因素之间的关联性，发现超限事件与季度（时间）、飞行阶段、航线存在一定联系，警告级别与飞行阶段存在一定联系，故我们剔除其余关联度较低的指标“机号”“月份”，其余因素视为关键因素，建立相关模型。
 	\subsubsection{不同超限基本特征统计分析}
 	
-	对于“超限事件-季度”，我们首先分别选取2015年及2016年的第一季度、第二季度、第三季度和第四季度，分别统计两年四个季度的超限事件总数，建立“超限事件-季度”模型并将其可视化，见\textcolor{blue}{\cref{fig:超限季度}}。我们分析得出2015年和2016年存在一定的共性：两年均出现一二季度超限事件总数远远多于三四季度，故我们认为当地一二季度存在较强影响飞行安全的因素，超限事件的发生于季度存在一定关联。
+	对于“超限事件-季度”，我们首先分别选取2015年及2016年的第一季度、第二季度、第三季度和第四季度，分别统计两年四个季度的超限事件总数，建立“超限事件-季度”模型并将其可视化，见\textcolor{blue}{\cref{fig:超限季度}}。我们分析得出2015年和2016年存在一定的共性：两年均出现一二季度超限事件总数远远多于三四季度，故我们认为当地一二季度存在较强影响飞行安全的因素，超限事件的发生与季度存在一定关联。
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.70\textwidth]{超限季度.pdf}
@@ -488,7 +523,7 @@
 			\label{fig:着陆词云图}
 		\end{minipage}
 	\end{figure}
-	针对“警告级别-飞行阶段”，我们对发生超限最多的三个飞行阶段的警告等级占比进行了绘图，如\textcolor{blue}{\cref{fig:预警等级阶段}}所示。我们发现对于不同飞行阶段，各警告等级占比不同，其中空中阶段的高级别警告占比最大，达到了19\%，这反应了在空中发生安全事故的危险程度更高，空中发生的超限更容易产生严重的后果，同时空中发生的超限次数占比较大，所以对航空安全来说，保护空中飞机平稳飞行格外重要。
+	针对“警告级别-飞行阶段”，我们对发生超限最多的三个飞行阶段的警告等级占比进行了绘图，如\textcolor{blue}{\cref{fig:预警等级阶段}}所示。我们发现对于不同飞行阶段，各警告等级占比不同，其中空中阶段的高级别警告占比最大，达到了19\%，这反映了在空中发生安全事故的危险程度更高，空中发生的超限更容易产生严重的后果，同时空中发生的超限次数占比较大，所以对航空安全来说，保护空中飞机平稳飞行格外重要。
 
 	\subsection{问题四模型的建立与求解}
 	对于问题四，我们首先附件3的数据特点，我们发现附件3由2367行数据与197列指标组成，是基于飞行参数对机组人员飞行技术探讨的大体量、高维度的数据。首先，我们需要对原始数据表进行预处理，包括空缺值、异常值、重复值、标签编码等操作，从而获得纯净数据。之后观察数据，进行初步降维，剔除方差较小的列数据，提升模型的预测效率。之后对数据进行标准化处理，通过PCA-CVCR的分析，确定保留指标的个数，再通过随机森林（Random Forest，RF）及极端梯度提升（eXtreme Gradient Boosting, XGBoost）模型，对数据建立多分类预测模型，并分析各指标的重要程度，进行第二次降维，选择合理指标，建立最终XGBoost模型，并分析模型的效果，计算模型的准确率、平均绝对误差、均方误差以及均方根误差，同时进行5折交叉验证，以及绘制模型的分类报告、混淆矩阵热力图、ROC/AUC曲线等，综合评价模型的效果。
@@ -496,44 +531,26 @@
 	对于附件3，我们通过以下步骤对数据进行预处理：
 	\begin{itemize}
 		\item \textbf{空缺值处理}：通过观察，我们发现该数据集存在多列数据大部分缺失，综合分析，我们确定$20\%$阈值进行剔除列数据，即若该列数据缺失率超过$20\%$，则剔除该列数据，经过统计，共计52个列数据；同时，若该列数据缺失率小于$20\%$，采用众数填充的方式进行。
-		\item \textbf{部分列数据剔除（初步降维）}：通过观察，我们发现该数据集存在多列其下各自数据一致的情况，分别是“机型”“TO Gate 1”“TO Gate 2”“TD Gate 3”“TD Gate 2”“TD Gate 1-1”“TO\_Vr”，同时包括“落地主操控”，这些指标对我们预测几组飞行技术影响很小，趋近于0，因此，我们将其剔除。
+		\item \textbf{部分列数据剔除（初步降维）}：通过观察，我们发现该数据集存在多列其下各自数据一致的情况，分别是“机型”“TO Gate 1”“TO Gate 2”“TD Gate 3”“TD Gate 2”“TD Gate 1-1”“TO\_Vr”，同时包括“落地主操控”，这些指标对我们预测机组飞行技术影响很小，趋近于0，因此，我们将其剔除。
 		\item \textbf{标签编码}：为了让模型更多地挖掘数据隐含的信息，我们需要对数据形式为字符型数据进行便签编码，分别是“V2\_Method”“Vref\_Method”“RoD\_Method”“MACH\_Method”\\“落地主操控人员资质”，这里我们利用Python中sklearn库preprocessing模块的LabelEncoder进行处理。
 		\item \textbf{数据标准化}：为了避免数据量纲对模型的影响，我们需要对数据进行Z-score标准化，处理过程同前文分析，见\textcolor{blue}{\nameref{数据标准化}}。
 	\end{itemize}
 	\subsubsection{多分类模型的建立}\label{RF-XGBoost}
 	这里我们建立随机森林（Random Forest，RF）及极端梯度提升（eXtreme Gradient Boosting, XGBoost）模型，过程如下分析。
 	
-	\textbf{随机森林（Random Forest, RF）}是由多棵决策树（Decision Tree）进行组合后对预测结果投票或取均值的一种算法\textcolor{blue}{\cite{Paper:随机森林}}。其有分类和回归两种模型，对于本题，我们选择分类模型。其伪代码如\textcolor{blue}{Algorithm\ref{RFfunction}}所示。
-	
-	\scalebox{0.88}{
-	\begin{algorithm}[H]
-		\label{RFfunction}
-		\KwData{数据集$\mathcal{D}$}
-		\textbf{function} DTree$\left(\mathcal{D}\right)$\
-		
-		\eIf{Termination}
-		{\textbf{return} $\mathrm{base}\left(g_t\right)$}
-		{\textbf{learn} $b\left(x\right)$并且依据$b\left(x\right)$划分$\mathcal{D}$为$\mathcal{D}_C$\
+	\textbf{随机森林（Random Forest, RF）}是由多棵决策树（Decision Tree）进行组合后对预测结果投票或取均值的一种算法\textcolor{blue}{\cite{Paper:随机森林}}。其有分类和回归两种模型，对于本题，我们选择分类模型。算法简图如\textcolor{blue}{\cref{fig:随机森林简图}}所示。
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.85\textwidth]{随机森林简图.pdf}
+		\caption{随机森林算法简图}
+		\label{fig:随机森林简图}
+	\end{figure}
 
-		\textbf{build} $G_C \leftarrow$ DTree($\mathcal{D}_C$)\
-
-		\textbf{return} $G\left(x\right)=\sum\limits_{C=1}^{C}[\![b\left(x\right)=C]\!]G_C\left(x\right)$}
-		
-		\textbf{function} RandomForest$\left(\mathcal{D}\right)$\
-		
-		\For{$t=1,2,3,\cdots,T$}{\textbf{request} 数据集$\tilde{\mathcal{D}}_t \leftarrow$ BoostStrapping$\left(\mathcal{D}\right)$\
-		
-		\textbf{obtain} DTree $g_t\leftarrow$ DTree$\left(\tilde{\mathcal{D}}_t\right)$\
-
-		\textbf{return} $G=$ Uniform$\left(g_t\right)$
-		}
-		
-		\KwResult{随机森林模型$G=\mathrm{Uniform}\left(g_t\right)$}
-		\caption{随机森林（RF）}
-	\end{algorithm}}
-
-	\textbf{极端梯度提升（eXtreme Gradient Boosting, XGBoost）}。XGBoost算法是一种基于树模型的优化模型，其将弱分类器组合，训练出一个较强的分类器。该算法通过多次迭代，生成一个新的树模型用于优化前一个树模型，随着迭代次数的增多，该模型的预测精度也会相应提高\textcolor{blue}{\cite{pxgboost1}}。
-
+	\textbf{极端梯度提升（eXtreme Gradient Boosting, XGBoost）}。XGBoost算法是一种基于树模型的优化模型，其将弱分类器组合，训练出一个较强的分类器。该算法通过多次迭代，生成一个新的树模型用于优化前一棵树模型，随着迭代次数的增多，该模型的预测精度也会相应提高\textcolor{blue}{\cite{pxgboost1}}。
+	\begin{figure}[H]
+		\centerline{\includegraphics[scale=0.60]{XGBoost简图.pdf}}
+		\caption{XGBoost算法简图}\label{fig:XGBoost}
+	\end{figure}
 		记通过数据处理后的数据集特征为$R\left(x_{ij}\right)_{m\times n}$，表示其包含$m$个用户，$n$个特征，在训练中形成的CART树的集合记为$F=\left\{f\left(x\right)=w_{q\left(x\right)},q:\mathbf{R}^n\to T,w\in \mathbf{R}^T\right\}$，其中$q$为树模型的叶节点决策规划，$T$为某一树模型叶节点数量，$w$为叶节点对应的得分\textcolor{blue}{\cite{pxgboost2}}。对于预测的$y$值，其计算公式为
 		\begin{equation}
 			\hat{y}=\varphi \left( x_i \right) =\sum\limits_{k=1}^K{f_k\left( x_i \right)} \label{fXGBoostypre}
@@ -566,12 +583,8 @@
 		\end{equation}
 	
 		通过上述分析，我们可以得到XGBoost算法简图，如\textcolor{blue}{\cref{fig:XGBoost}}所示。
-		\begin{figure}[H]
-			\centerline{\includegraphics[scale=0.60]{XGBoost简图.pdf}}
-			\caption{XGBoost算法简图}\label{fig:XGBoost}
-		\end{figure}
 
-	对于该数据集，我们利用得到的预处理后的数据进行训练、测试\textcolor{blue}{\footnote{这里我们划分训练与测试集比例为$9:1$。}}，上述量模型效果见\textcolor{blue}{\cref{tab:初次效果}}。
+	对于该数据集，我们利用得到的预处理后的数据进行训练、测试\textcolor{blue}{\footnote{这里我们划分训练与测试集比例为$9:1$。}}，上述模型效果见\textcolor{blue}{\cref{tab:初次效果}}。
 \begin{table}[H]
 	\centering
 	\caption{RF与XGBoost初次学习效果}
@@ -600,7 +613,7 @@
 		\label{fig:附件3累计方差解释}
 	\end{figure}
 
-	通过观察上图，我们可以发现，该数据集维度高，在指标个数为120左右时，累计解释方差才逐渐收敛于1.0，则对于该数据，大多对飞行参数指标均对机组飞行技术的评估有一定影响，因此仅从该方面，我们还尚且不能确定保留下的指标数几对应指标，因此这里我们再依据\textcolor{blue}{\nameref{RF-XGBoost}}，得到各指标对评估的影响量化程度，对于RF排序见\textcolor{blue}{\cref{fig:RF排序}}，对于XGBoost排序见\textcolor{blue}{\cref{fig:XGBoost排序}}。\textcolor{blue}{\footnote{由于XGBoost重要度排序图示篇幅过大，因此我们将其放置于附录中。}}
+	通过观察上图，我们可以发现，该数据集维度高，在指标个数为120左右时，累计解释方差才逐渐收敛于1.0，则对于该数据，大多对飞行参数指标均对机组飞行技术的评估有一定影响，因此仅从该方面，我们还尚且不能确定保留下的指标数及对应指标，因此这里我们再依据\textcolor{blue}{\nameref{RF-XGBoost}}，得到各指标对评估的影响量化程度，对于RF排序见\textcolor{blue}{\cref{fig:RF排序}}，对于XGBoost排序见\textcolor{blue}{\cref{fig:XGBoost排序}}。\textcolor{blue}{\footnote{由于XGBoost重要度排序图示篇幅过大，因此我们将其放置于附录中。}}
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.90\textwidth]{FeatureImportanceRF.pdf}
@@ -626,7 +639,6 @@
 		\begin{equation}
 		\mathrm{MAE}=\frac{1}{n}\sum_{i=1}^{n}\left|y_{i}-\hat{y}_{i}\right| \label{MAE}
 		\end{equation}
-	其中，$y_i$为实际值，$\hat{y}_i$为预测值；
 	\item \textbf{均方误差}
 		\begin{equation}
 		\mathrm{MSE}=\frac{1}{n}\sum_{i=1}^{n}\left(y_{i}-\hat{y}_{i}\right)^{2} \label{MSE}
@@ -689,7 +701,7 @@
 		根据上述\textcolor{blue}{\eqref{Precision}}、\textcolor{blue}{\eqref{Recall}}、\textcolor{blue}{\eqref{F1-Score}}，我们可以计算出模型对于每一类别的三项指标值，并绘制分类报告图，见\textcolor{blue}{\cref{fig:分类报告}}。
 		\begin{figure}[H]
 			\centering
-			\includegraphics[width=0.70\textwidth]{ClassificationReport.pdf}
+			\includegraphics[width=0.60\textwidth]{ClassificationReport.pdf}
 			\caption{XGBoost 分类报告}
 			\label{fig:分类报告}
 		\end{figure}
@@ -697,7 +709,7 @@
 \textbf{混淆矩阵热力图}。该图示的主对角线数据之和为模型预测准确的样本数。对于多分类模型，我们可以随机指定一类为正类，而其余就为对应的负类。这里我们需要引入四项值，分别为$TP$、$FN$、$FP$、$TN$，其中T为True，F为False，这两个字母表示预测值与实际值是否相同；P为Positive，N为Negative，这两个字母表示预测出的是属于正类（阳性）还是负类（阴性）。而混淆矩阵热力图即为这些值组成，该图示可以直观地观察到预测准确与错误的情况，以及模型对于每一类别的区分程度，见\textcolor{blue}{\cref{fig:混淆矩阵热力图}}。
 		\begin{figure}[H]
 			\centering
-			\includegraphics[width=0.70\textwidth]{ConfusionMatrix.pdf}
+			\includegraphics[width=0.60\textwidth]{ConfusionMatrix.pdf}
 			\caption{XGBoost 混淆矩阵热力图}
 			\label{fig:混淆矩阵热力图}
 		\end{figure}
@@ -726,40 +738,275 @@
 该可视化以每一类别的$1-\mathrm{Specificity}$即$FPR$为横坐标，以$\mathrm{Sensitivity}$即$TPR$为纵坐标，其可体现出模型的灵敏度与特异性之间的关系与差异。因此，该图的理想点位于左上角，即$FPR=0$且$TPR=1$，换言之，当曲线越靠近左上角，模型效果就越优。从而，我们可以得到另一项指标，即曲线下面积（Area Under the Curve, AUC），由上述分析可知，AUC值越高，模型的整体效果也就越优。见\textcolor{blue}{\cref{fig:ROCAUC}}。
 		\begin{figure}[H]
 			\centering
-			\includegraphics[width=0.70\textwidth]{ROCAUC.pdf}
+			\includegraphics[width=0.60\textwidth]{ROCAUC.pdf}
 			\caption{XGBoost ROC/AUC曲线}
 			\label{fig:ROCAUC}
 		\end{figure}
 
-通过综合分析上述评价结果，我们可以发现基于飞行数据对机组飞行技术的评估模型效果良好，无论是模型精度、平均绝对误差、均方误差还是均方根误差都较优秀，模型泛化能力较强，分类效果优秀。
+综合分析上述评价结果，我们可以发现基于飞行数据对机组飞行技术的评估模型效果良好，无论是模型精度、平均绝对误差、均方误差还是均方根误差都较优秀，模型泛化能力较强，分类效果优秀。
   
 	\subsection{问题五模型的建立与求解}
+对于问题五，我们需要综合问题一、二、三、四分析的结果。
+\begin{itemize}
+	\item \textbf{问题一}：得到的关键性指标因素；
+	\item \textbf{问题二}：对横滚操纵、俯仰操纵量化分析结果；
+	\item \textbf{问题三}：对超限事件的统计分析；
+	\item \textbf{问题四}：基于飞行参数对机组人员飞行技术的评价的结果。
+\end{itemize}
 
+	\subsubsection{附件1中8次航班各个全航段监测}
+	在问题二中，我们分析了在一次航班中，最容易出现事故的是在着陆阶段，因此在问题二中，我们着重分析飞行的着陆阶段，绘制飞行参数时刻变化监测图。而这里，我们需要对所有航班实施自动化监测，因此，在这里，我们需要绘制各飞行参数全航段变化量值，这里我们以航班8可视化为例，其对应部分参数如\textcolor{blue}{\cref{fig:第8次航班海拔高度与无线电高度}} $\sim$ \textcolor{blue}{\cref{fig:第8次航班俯仰角率、下降率}}所示。
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第8次航班海拔高度与无线电高度.pdf}
+			\caption{第8次航班海拔高度与无线电高度}
+			\label{fig:第8次航班海拔高度与无线电高度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第8次航班空速、地速、风速.pdf}
+			\caption{第8次航班空速、地速、风速}
+			\label{fig:第8次航班空速、地速、风速}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第8次航班飞行参量.pdf}
+			\caption{第8次航班飞行参量}
+			\label{fig:第8次航班飞行参量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第8次航班下滑道偏差.pdf}
+			\caption{第8次航班下滑道偏差}
+			\label{fig:第8次航班下滑道偏差}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第8次航班航向道偏差.pdf}
+			\caption{第8次航班航向道偏差}
+			\label{fig:第8次航班航向道偏差}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第8次航班俯仰角率、下降率.pdf}
+			\caption{第8次航班俯仰角率、下降率}
+			\label{fig:第8次航班俯仰角率、下降率}
+		\end{minipage}
+	\end{figure}
 
-	\section{模型的评价与推广}
+	通过对所有航班的全航段参量实时监测分析，我们可以发现：
+	\begin{itemize}
+		\item \textbf{航班1}：在飞机启动后重量从340000到260000平稳下降，在起飞和降落过程中下降率发生波动，同时也产生的航向道和下滑道的偏差，但在飞行中也出现了一次航向道与下滑道的偏差，我们分析其原因是机组的误操作。在整个过程中机组对盘量的改变次数较多，使得坡度不断发生变化，同时，G值基本稳定不变，说明此航班对杆量的控制较好，未出现重着陆等情况。速度和海拔在飞行过程中基本不变。
+		\item \textbf{航班2}：在飞行过程中重量平稳下降，起飞和降落时下降率发生变化，飞机在中途飞行过程未出现航向道和下滑道的偏差。相比航班1，航班2在飞行过程中盘量改变次数较少且幅度较小，坡度未发生较大变化，G值也一直处于平稳状态。速度与海拔同样一直很稳定。
+		\item \textbf{航班3}：在飞行时重量同样稳定下降，但起飞时发生了两次下降率的波动，我们推测是飞机在起飞后遇到了强气流。此航班的航向道和下滑道偏差十分严重，我们分析其原因是飞机在空中遭遇突发事件，如原航道有恶劣天气，机组不得不暂时偏离航线。G值在飞行过程中保持平稳，说明机组人员在操作中没有严重的失误。速度与海拔保持平稳。
+		\item \textbf{航班4}：其重量在飞行过程中稳定下降，在起飞后也遇到了如强气流等突发情况，使飞机的下降率产生持续波动，由于飞机受到突发情况影响较多，使飞机不断调整飞行状态，这也导致了在过程中航向道和下滑道发生了严重的偏差，但G值一直很稳定，我们分析其原因是机组人员应对突发情况的应变能力强，及时做出了调整。速度和海拔发生了轻微的波动。
+		\item \textbf{下降率，俯仰角率}：航线5滑行时间较短，除起飞，降落的下降率变化外，在巡航阶段下降率发生了较大突变，我们认为飞机可能遭遇较强乱流，或为QAR数据记录出现问题。
+		
+		航线6与航线5一致，经短暂滑行后起飞，而后在巡航阶段我们发现有两处下降率突变，第一处较第二处变化小，分析认为，机组共遇到两次乱流或恶劣天气，其中第二次乱流较为明显，且在下降率明显变化后发生了持续抖动，机长可能做出了解除自动驾驶操作，手动接管飞机的操作，待飞机飞行平稳后，恢复自动驾驶。
+
+		航线7通过分析时间，我们认为这是一架小型飞机，其起飞和降落时间较普通民航客机时间长，巡航时间较短。
+		
+		航线8与航线7一致，由普通小型客机执飞。其在巡航阶段做出降低高度操作，我们认为其为避让恶劣天气如：暴雨云团，强风等。
+		
+		其中航线5，6，7，8在降落阶段，观察其下降率曲线，我们发现出现了多处峰值，我们认为机长普遍采取了分阶段降落的措施。
+		\item \textbf{航向道偏差}：航线5由于普通民航客机飞行速度普遍较快且重量较重，起飞后转弯前往航路点，或在飞行中遇到转弯情形时，往往为了安全和旅客舒适度不会做出急转弯操作，故起飞后一段时间内时往往会偏离航道而后按航线飞行。这便解释了为何航线5会在起飞后一段时间后出现偏离航向道。
+		
+		航线6，我们认为此条航线为某机场至另一机场的直飞航线，其在起飞后航线道偏离极小。
+		
+		航线7，由于小型飞机飞行速度较慢，其需要花较长时间飞抵预定航向道，同样需要较普通民航客机提前脱离巡航阶段，这便解释了为何其巡航时间较短。
+		
+		航线8，与航线7一致。
+		
+		我们发现航线5，6，7，8飞行过程中在初始阶段和降落阶段有较大的航向道偏差，此为跑道滑行部分。
+		\item \textbf{下滑道偏差}：对于航线5，6：如今普通民航客机的电气化程度较高，多为机器或中央电脑控制，其下滑道偏差较小。
+		
+		航线7：该小型机型为电气化程度较高机型，其起飞和降落阶段主要由飞行员控制，巡航阶段由中央电脑控制。
+		
+		航线8：全程由飞行员控制，全航程下滑道偏差较为明显。
+		\item \textbf{飞行参量五因素}：航线5：飞行过程中杆量、盘量和G值变化较小，此次飞行较为平缓，该飞机起飞后即向右大幅度转弯而后在巡航阶段向右和向左各做出微调，在降落过程，飞机出现了向左大角度偏转，我们认为机长进行短五边进近或遭遇了恶劣天气，其姿态总体保持恒定。
+		
+		航线6：其巡航阶段与航线5一致，起飞阶段坡度发生了较大改变，且与起飞姿态变化相重合，我们认为其在起飞阶段受到天气状况影响，起飞过程较为摇晃。将进近过程中坡度变化量与航线5相比较，我们认为其进近方向与航线5相悖。
+		
+		航线7与航线8：我们认为这两条航线为两座机场互通航线，其相关数据对应相反。飞行过程中，飞行员在巡航阶段多次修正航线。降落过程较为平缓，姿态变化量较小。
+		速度。
+		
+		航线5，6，7，8计算空速均与地速呈正比，与风速呈反比。
+		\item \textbf{海拔及无线电高度}：航线5，6，7，8的无线电高度基本保持不变，海拔高度反映全航段的飞行过程。
+	\end{itemize}
 	
+	\subsubsection{附件1中8次航班综合分析}
+	为得到附件1中所有航班的一致性特点，我们首先将经过预处理后的表格（这里不包括标签编码及数据标准化或归一化处理）进行全汇总，将8次航班信息导入至一张表格，分析在问题一中的得出的结果中的与飞行安全相关性大的所有指标，观察数据分布情况。但在此之前，我们发现大多指标概率频率不为$1\,\text{Hz}$，即1秒内记录多个值，因此我们这里选择对应指标其在该时刻（1秒内）出现的最大值为对应指标，需要这样处理的指标有：“G值”“姿态”“杆量”“坡度”“盘量”“左油门杆位置”“右油门杆位置”。经过上述处理后，我们对附件指标进行筛选，选择出我们需要的指标，进行综合分析，所选指标为：“具体时间”“计算空速”“G值”“姿态”“杆量”“坡度”“盘量”“下滑道偏差（C）”“下滑道偏差（L）”“下滑道偏差（R）”“航向道偏差（C）”“航向道偏差（L）”“航向道偏差（R）”“俯仰角率”“下降率”“RUDD位置”“左油门杆位置”“右油门杆位置“。
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{俯仰角率.pdf}
+			\caption{俯仰角率数据分布直方图}
+			\label{fig:俯仰角率直方图}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{G值.pdf}
+			\caption{G值数据分布直方图}
+			\label{fig:G值直方图}
+		\end{minipage}
+	\end{figure}
+
+	这里我们以“俯仰角率”及“G值”为例，绘制数据分布直方图，如\textcolor{blue}{\cref{fig:俯仰角率直方图}}与\textcolor{blue}{\cref{fig:G值直方图}}所示。
+
+
+	从图示上我们可以直观发现，其均服从正态分布。因此我们通过对飞行QAR数据的大样本统计分析: 大部分飞行性能参数在较大的样本空间内都近似呈现正态分布\textcolor{blue}{\cite{Paper:正态分布}}。对于其余指标的检验，由于指标过多，篇幅过大，我们不将在正文中展现，而将其放置于附录中，读者可自行查阅，见\textcolor{blue}{\cref{fig:RUDD位置}} $\sim$ \textcolor{blue}{\cref{fig:计算空速}}。因此这里，我们采用$3\sigma$方法对各指标进行时刻识别，分析异常值。在这里，我们也解释了，为何在问题一中不对异常值进行剔除，因为我们认为，异常值的存在还很大可能来源于此刻飞机出现某些危险性状态、环境干预加强、认为操作失误等，若将其剔除，有一定可能将会影响我们对飞行安全的判断。
+
+	对于上述指标，我们还需要对其进行分类，部分指标需要计算其时间变化率，从变化率才可较为准确地反映此刻飞行的参量，具体划分如\textcolor{blue}{\cref{tab:参量划分}}所示。
+\begin{table}[H]
+	\centering
+	\caption{参量划分及处理方法}
+	\scalebox{0.85}{
+	  \begin{tabular}{cc}
+	  \toprule
+	  \textbf{处理方法} & \textbf{指标名称} \\
+	  \midrule
+	  变化率处理 & 姿态、坡度、RUDD位置、左油门杆位置、右油门杆位置 \\
+	  \multirow{2}[1]{*}{正常取值} & G值、杆量、盘量、下滑道偏差（C）、下滑道偏差（L）、下滑道偏差（R）、 \\
+			& 航向道偏差（C）、航向道偏差（L）、航向道偏差（R）、俯仰角率、下降率 \\
+	  \bottomrule
+	  \end{tabular}}
+	\label{tab:参量划分}
+\end{table}
+  
+  
+	经过上述处理后，我们即可开始计算各参数的均值、标准差，再以$3\sigma$方法，设定参量超限阈值，最终阈值见\textcolor{blue}{\cref{tab:阈值}}。
+\begin{table}[H]
+	\centering
+	\caption{十六项指标阈值设定}
+	\scalebox{0.85}{
+	  \begin{tabular}{ccccc}
+	  \toprule
+	  \textbf{阈值} & \textbf{姿态} & \textbf{坡度} & \textbf{RUDD位置} & \textbf{左油门杆位置} \\
+	  \midrule
+	  最小值   & -0.1824  & -0.6674  & -0.0669  & -0.7398  \\
+	  最大值   & 0.1824  & 0.6674  & 0.0669  & 0.7398  \\
+	  \midrule
+	  \textbf{阈值} & \textbf{右油门杆位置} & \textbf{G值} & \textbf{杆量} & \textbf{盘量} \\
+	  \midrule
+	  最小值   & 0.7365  & 0.9537  & -0.0455  & -0.0617  \\
+	  最大值   & 0.7365  & 1.0636  & 0.0441  & 0.0550  \\
+	  \midrule
+	  \textbf{阈值} & \textbf{下滑道偏差（C）} & \textbf{下滑道偏差（L）} & \textbf{下滑道偏差（R）} & \textbf{航向道偏差（C）} \\
+	  \midrule
+	  最小值   & -3.2725  & -3.0885  & -3.0608  & -4.9660  \\
+	  最大值   & 3.3470  & 3.1475  & 3.1096  & 4.7401  \\
+	  \midrule
+	  \textbf{阈值} & \textbf{航向道偏差（L）} & \textbf{航向道偏差（R）} & \textbf{俯仰角率} & \textbf{下降率} \\
+	  \midrule
+	  最小值   & -4.9525  & -4.9612  & -0.2695  & -1660.3728  \\
+	  最大值   & 4.7258  & 4.7562  & 0.2102  & 1660.7590  \\
+	  \bottomrule
+	  \end{tabular}}
+	\label{tab:阈值}
+\end{table}
+  
+\subsubsection{附件1中8次航班仿真}
+由于附件1中存在8次航班数据，数据体量大，手动分析较为困难，且在实际应用场景中，每天全球各地航班统计困难，同时我们也难以有足够的人力去逐一分析。因此，在这里，我们利用Python中def字段定义函数，，建立自动化智能预警机制系统，将各指标阈值输入，传入已处理完成的数据，即可完成实时自动化预警，旨在提高分析效率，预防可能的安全事故。我们采用$1\,\text{Hz}$记录频率，逐秒进行实时监测，最终可以得到关于“飞行姿态变化”“坡度变化”“RUDD位置变化”“左油门杆位置变化”“右油门杆位置变化”“失重超重情况”“杆量情况”“盘量情况”“下滑道偏差（C）情况”“下滑道偏差（L）情况”“下滑道偏差（R）情况”“航向道偏差（C）情况”“航向道偏差（L）情况”“航向道偏差（R）情况”“俯仰角率情况”“下降率情况”的情况。同对每秒实行实时监测，即可快速对异常进行分析，尽可能地预防安全事故的发生，对于航线8的仿真结果，我们随机选取10行展示如下，如\textcolor{blue}{\cref{tab:仿真结果部分}}所示。\textcolor{blue}{\footnote{由于列指标过多，因此我们省略中间计算指标，而仅显示时刻与各指标是否异常情况。}}而对于该航班其余时刻以及其余航班所有时刻仿真结果，我们将会放于“计算结果”及“支撑材料”中，供读者查阅。
+\begin{table}[H]
+	\centering
+	\caption{航班8仿真结果，随机截取部分结果}
+	\scalebox{0.80}{
+	  \begin{tabular}{ccccc}
+	  \toprule
+	  \textbf{具体时间} & \textbf{飞行姿态变化} & \textbf{坡度变化} & \textbf{RUDD位置变化} & \textbf{左油门杆位置变化} \\
+	  \midrule
+	  12:00:59 & 正常    & 正常    & 正常    & 正常 \\
+	  12:01:05 & 正常    & 正常    & 正常    & 正常 \\
+	  12:08:53 & 异常    & 正常    & 正常    & 正常 \\
+	  12:08:54 & 异常    & 异常    & 正常    & 正常 \\
+	  12:08:56 & 异常    & 正常    & 正常    & 正常 \\
+	  12:17:50 & 正常    & 异常    & 正常    & 正常 \\
+	  12:17:51 & 异常    & 异常    & 正常    & 正常 \\
+	  13:08:31 & 正常    & 正常    & 正常    & 正常 \\
+	  13:48:41 & 正常    & 异常    & 正常    & 异常 \\
+	  13:48:42 & 正常    & 正常    & 正常    & 正常 \\
+	  \midrule
+	  \textbf{具体时间} & \textbf{下滑道偏差（C）情况} & \textbf{下滑道偏差（L）情况} & \textbf{下滑道偏差（R）情况} & \textbf{航向道偏差（C）情况} \\
+	  \midrule
+	  12:00:59 & 正常    & 正常    & 正常    & 正常 \\
+	  12:01:05 & 正常    & 正常    & 异常R   & 正常 \\
+	  12:08:53 & 正常    & 异常L   & 正常    & 正常 \\
+	  12:08:54 & 正常    & 正常    & 正常    & 正常 \\
+	  12:08:56 & 正常    & 正常    & 正常    & 正常 \\
+	  12:17:50 & 正常    & 正常    & 正常    & 正常 \\
+	  12:17:51 & 正常    & 正常    & 正常    & 正常 \\
+	  13:08:31 & 正常    & 正常    & 正常    & 正常 \\
+	  13:48:41 & 异常C   & 异常L   & 异常R   & 正常 \\
+	  13:48:42 & 正常    & 异常L   & 异常R   & 正常 \\
+	  \midrule
+	  \textbf{具体时间} & \textbf{右油门杆位置变化} & \textbf{失重超重情况} & \textbf{杆量情况} & \textbf{盘量情况} \\
+	  \midrule
+	  12:00:59 & 正常    & 正常    & 正常    & 正常 \\
+	  12:01:05 & 正常    & 正常    & 正常    & 正常 \\
+	  12:08:53 & 正常    & 超重    & 松杆（推杆）过度 & 右旋过度 \\
+	  12:08:54 & 正常    & 超重    & 松杆（推杆）过度 & 正常 \\
+	  12:08:56 & 正常    & 超重    & 松杆（推杆）过度 & 正常 \\
+	  12:17:50 & 正常    & 正常    & 正常    & 左旋过度 \\
+	  12:17:51 & 正常    & 正常    & 正常    & 左旋过度 \\
+	  13:08:31 & 正常    & 正常    & 正常    & 正常 \\
+	  13:48:41 & 异常    & 超重    & 正常    & 左旋过度 \\
+	  13:48:42 & 正常    & 超重    & 正常    & 正常 \\
+	  \midrule
+	  \textbf{具体时间} & \textbf{航向道偏差（L）情况} & \textbf{航向道偏差（R）情况} & \textbf{俯仰角率情况} & \textbf{下降率情况} \\
+	  \midrule
+	  12:00:59 & 正常    & 正常    & 正常    & 正常 \\
+	  12:01:05 & 正常    & 正常    & 正常    & 正常 \\
+	  12:08:53 & 正常    & 正常    & 异常    & 正常 \\
+	  12:08:54 & 正常    & 正常    & 异常    & 正常 \\
+	  12:08:56 & 正常    & 正常    & 异常    & 正常 \\
+	  12:17:50 & 正常    & 正常    & 正常    & 正常 \\
+	  12:17:51 & 正常    & 正常    & 正常    & 正常 \\
+	  13:08:31 & 正常    & 正常    & 正常    & 正常 \\
+	  13:48:41 & 正常    & 正常    & 正常    & 正常 \\
+	  13:48:42 & 正常    & 正常    & 正常    & 正常 \\
+	  \bottomrule
+	  \end{tabular}}
+	\label{tab:仿真结果部分}
+  \end{table}
+  
+\section{模型的评价与推广}
 	\subsection{模型的评价}
 	\begin{itemize}
 		\item \textbf{模型的优点}：
 			\begin{enumerate}
-				\item ……
-				\item ……
+				\item 由于QAR数据维度较高，我们通过PCA累计解释方差模型进行降维，确定了具有代表性指标的个数，结果更加符合现实。
+				\item 综合随机森林模型及XGBoost模型，对指标重要度进行排序，并选择合理性质变，定性且定量分析。
+				\item 利用熵权法计算飞行参数对飞行安全的权重，保证评价的客观性。
+				\item 在建立模型前我们对QAR数据进行预处理，使数据更真实完整，得到的结果更符合实际。
+				\item 对QAR数据以时间序列为特点，进行数据合理性分析，保证后续分析的数据来源可靠。
+				\item 在对超限的分析中我们从不同的方面分析，使得分析的结果更加全面。
+				\item 建立自动化智能预警机制系统，我们根据数据特点，合理设定阈值，尽可能地保证预测结果的准确，预防可能的安全事故。
 			\end{enumerate}
-		\item \textbf{模型的缺点}：
+		\item \textbf{模型的缺点及改进}：
 			\begin{enumerate}
-				\item ……
-				\item ……
-				\item ……
-			\end{enumerate}
-		\item \textbf{模型的改进}：
-			\begin{enumerate}
-				\item ……
-				\item ……
-				\item ……
+				\item 层次聚类模型在计算过程中需要计算每个样本间的距离，计算复杂度较高。在未来，我们可以选用计算复杂度低的模型来对样本进行分类。
+				\item 用PCA确定影响飞行员飞行技术的指标时，主成分各个特征维度的含义具有一定的模糊性，其特征的解释性没有原始样本强。
+				\item 仅通过设定阈值判定超限，仍存在一定局限性。在未来，可以构建风险判断矩阵，引入贝叶斯网络，对飞行数据进行更深层次分析，提升对未知事件预测的准确性。
 			\end{enumerate}
 	\end{itemize}
 	\subsection{模型的推广}
-
+	此模型有利于处理高维复杂数据，因此除了监控飞行安全外，我们也可将此模型运用于我国高铁铁路运行监测中，虽然火车作为一种较为安全的出行方式，但并不代表其不会发生事故，此模型可以协助铁路公司分析列车的运行情况，对列车运行做出监测，及时就相关可能威胁到列车运行安全的操作做出预警。
+	
+	以此类推，除了交通方面，此模型适用于需要实时监测运行状态的企业，如发电厂、高危化工企业等。在一定程度上完善了当前的预警体系，为减少相关行业恶性事件的发生做出了贡献。
+	
 	\newpage
 	\phantomsection
 	\addcontentsline{toc}{section}{\textbf{参考文献}}
@@ -793,6 +1040,7 @@
 
 	\bibitem{Paper:郑薇}郑薇. 基于QAR数据的重着陆风险评估及预测研究[D].中国民航大学,2014.
 
+	\bibitem{Paper:正态分布}汪磊,孙瑞山,吴昌旭,崔振新,陆正.基于飞行QAR数据的重着陆风险定量评价模型[J].中国安全科学学报,2014,24(02):88-92.DOI:10.16265/j.cnki.issn1003-3033.2014.02.016.
 	\end{thebibliography}
 	\end{spacing}
 	\newpage
@@ -812,34 +1060,561 @@
 	\noindent{\heiti [A]图示}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.70\textwidth]{1-2 Landing.pdf}
+		\includegraphics[width=0.68\textwidth]{1-2 Landing.pdf}
 		\caption{航班2 着陆过程指标量值实时监视}
 		\label{fig:1-2}
 	\end{figure}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.70\textwidth]{1-4 Landing.pdf}
+		\includegraphics[width=0.68\textwidth]{1-4 Landing.pdf}
 		\caption{航班4 着陆过程指标量值实时监视}
 		\label{fig:1-4}
 	\end{figure}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.70\textwidth]{1-5 Landing.pdf}
+		\includegraphics[width=0.68\textwidth]{1-5 Landing.pdf}
 		\caption{航班5 着陆过程指标量值实时监视}
 		\label{fig:1-5}
 	\end{figure}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.70\textwidth]{1-6 Landing.pdf}
+		\includegraphics[width=0.68\textwidth]{1-6 Landing.pdf}
 		\caption{航班6 着陆过程指标量值实时监视}
 		\label{fig:1-6}
 	\end{figure}
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.55\textwidth]{FeatureImportanceXGB.pdf}
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{RUDD位置.pdf}
+			\caption{RUDD位置数据分布直方图}
+			\label{fig:RUDD位置}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{下降率.pdf}
+			\caption{下降率数据分布直方图}
+			\label{fig:下降率}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{右油门杆位置.pdf}
+			\caption{右油门杆位置数据分布直方图}
+			\label{fig:右油门杆位置}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{左油门杆位置.pdf}
+			\caption{左油门杆位置数据分布直方图}
+			\label{fig:左油门杆位置}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{航向道偏差（C）.pdf}
+			\caption{航向道偏差（C）数据分布直方图}
+			\label{fig:航向道偏差（C）}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{航向道偏差（L）.pdf}
+			\caption{航向道偏差（L）数据分布直方图}
+			\label{fig:航向道偏差（L）}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{航向道偏差（R）.pdf}
+			\caption{航向道偏差（R）数据分布直方图}
+			\label{fig:航向道偏差（R）}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{盘量.pdf}
+			\caption{盘量数据分布直方图}
+			\label{fig:盘量}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{下滑道偏差（C）.pdf}
+			\caption{下滑道偏差（C）数据分布直方图}
+			\label{fig:下滑道偏差（C）}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{下滑道偏差（L）.pdf}
+			\caption{下滑道偏差（L）数据分布直方图}
+			\label{fig:下滑道偏差（L）}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{下滑道偏差（R）.pdf}
+			\caption{下滑道偏差（R）数据分布直方图}
+			\label{fig:下滑道偏差（R）}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{杆量.pdf}
+			\caption{杆量数据分布直方图}
+			\label{fig:杆量}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{坡度.pdf}
+			\caption{坡度数据分布直方图}
+			\label{fig:坡度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.85\linewidth]{姿态.pdf}
+			\caption{姿态数据分布直方图}
+			\label{fig:姿态}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.60\textwidth]{计算空速.pdf}
+		\caption{计算空速数据分布直方图数据分布直方图}
+		\label{fig:计算空速}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第1次航班飞机重量.pdf}
+			\caption{第1次航班飞机重量}
+			\label{fig:第1次航班飞机重量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第2次航班飞机重量.pdf}
+			\caption{第2次航班飞机重量}
+			\label{fig:第2次航班飞机重量}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第3次航班飞机重量.pdf}
+			\caption{第3次航班飞机重量}
+			\label{fig:第3次航班飞机重量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第4次航班飞机重量.pdf}
+			\caption{第4次航班飞机重量}
+			\label{fig:第4次航班飞机重量}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第5次航班飞机重量.pdf}
+			\caption{第5次航班飞机重量}
+			\label{fig:第5次航班飞机重量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第6次航班飞机重量.pdf}
+			\caption{第6次航班飞机重量}
+			\label{fig:第6次航班飞机重量}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第7次航班飞机重量.pdf}
+			\caption{第7次航班飞机重量}
+			\label{fig:第7次航班飞机重量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第8次航班飞机重量.pdf}
+			\caption{第8次航班飞机重量}
+			\label{fig:第8次航班飞机重量}
+		\end{minipage}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.58\textwidth]{FeatureImportanceXGB.pdf}
 		\caption{XGBoost重要度排序}
 		\label{fig:XGBoost排序}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第1次航班海拔高度与无线电高度.pdf}
+			\caption{第1次航班海拔高度与无线电高度}
+			\label{fig:第1次航班海拔高度与无线电高度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第1次航班空速、地速、风速.pdf}
+			\caption{第1次航班空速、地速、风速}
+			\label{fig:第1次航班空速、地速、风速}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第1次航班飞行参量.pdf}
+			\caption{第1次航班飞行参量}
+			\label{fig:第1次航班飞行参量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第1次航班下滑道偏差.pdf}
+			\caption{第1次航班下滑道偏差}
+			\label{fig:第1次航班下滑道偏差}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第1次航班航向道偏差.pdf}
+			\caption{第1次航班航向道偏差}
+			\label{fig:第1次航班航向道偏差}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第1次航班俯仰角率、下降率.pdf}
+			\caption{第1次航班俯仰角率、下降率}
+			\label{fig:第1次航班俯仰角率、下降率}
+		\end{minipage}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第2次航班海拔高度与无线电高度.pdf}
+			\caption{第2次航班海拔高度与无线电高度}
+			\label{fig:第2次航班海拔高度与无线电高度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第2次航班空速、地速、风速.pdf}
+			\caption{第2次航班空速、地速、风速}
+			\label{fig:第2次航班空速、地速、风速}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第2次航班飞行参量.pdf}
+			\caption{第2次航班飞行参量}
+			\label{fig:第2次航班飞行参量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第2次航班下滑道偏差.pdf}
+			\caption{第2次航班下滑道偏差}
+			\label{fig:第2次航班下滑道偏差}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第2次航班航向道偏差.pdf}
+			\caption{第2次航班航向道偏差}
+			\label{fig:第2次航班航向道偏差}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第2次航班俯仰角率、下降率.pdf}
+			\caption{第2次航班俯仰角率、下降率}
+			\label{fig:第2次航班俯仰角率、下降率}
+		\end{minipage}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第3次航班海拔高度与无线电高度.pdf}
+			\caption{第3次航班海拔高度与无线电高度}
+			\label{fig:第3次航班海拔高度与无线电高度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第3次航班空速、地速、风速.pdf}
+			\caption{第3次航班空速、地速、风速}
+			\label{fig:第3次航班空速、地速、风速}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第3次航班飞行参量.pdf}
+			\caption{第3次航班飞行参量}
+			\label{fig:第3次航班飞行参量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第3次航班下滑道偏差.pdf}
+			\caption{第3次航班下滑道偏差}
+			\label{fig:第3次航班下滑道偏差}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第3次航班航向道偏差.pdf}
+			\caption{第3次航班航向道偏差}
+			\label{fig:第3次航班航向道偏差}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第3次航班俯仰角率、下降率.pdf}
+			\caption{第3次航班俯仰角率、下降率}
+			\label{fig:第3次航班俯仰角率、下降率}
+		\end{minipage}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第4次航班海拔高度与无线电高度.pdf}
+			\caption{第4次航班海拔高度与无线电高度}
+			\label{fig:第4次航班海拔高度与无线电高度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第4次航班空速、地速、风速.pdf}
+			\caption{第4次航班空速、地速、风速}
+			\label{fig:第4次航班空速、地速、风速}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第4次航班飞行参量.pdf}
+			\caption{第4次航班飞行参量}
+			\label{fig:第4次航班飞行参量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第4次航班下滑道偏差.pdf}
+			\caption{第4次航班下滑道偏差}
+			\label{fig:第4次航班下滑道偏差}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第4次航班航向道偏差.pdf}
+			\caption{第4次航班航向道偏差}
+			\label{fig:第4次航班航向道偏差}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第4次航班俯仰角率、下降率.pdf}
+			\caption{第4次航班俯仰角率、下降率}
+			\label{fig:第4次航班俯仰角率、下降率}
+		\end{minipage}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第5次航班海拔高度与无线电高度.pdf}
+			\caption{第5次航班海拔高度与无线电高度}
+			\label{fig:第5次航班海拔高度与无线电高度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第5次航班空速、地速、风速.pdf}
+			\caption{第5次航班空速、地速、风速}
+			\label{fig:第5次航班空速、地速、风速}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第5次航班飞行参量.pdf}
+			\caption{第5次航班飞行参量}
+			\label{fig:第5次航班飞行参量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第5次航班下滑道偏差.pdf}
+			\caption{第5次航班下滑道偏差}
+			\label{fig:第5次航班下滑道偏差}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第5次航班航向道偏差.pdf}
+			\caption{第5次航班航向道偏差}
+			\label{fig:第5次航班航向道偏差}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第5次航班俯仰角率、下降率.pdf}
+			\caption{第5次航班俯仰角率、下降率}
+			\label{fig:第5次航班俯仰角率、下降率}
+		\end{minipage}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第6次航班海拔高度与无线电高度.pdf}
+			\caption{第6次航班海拔高度与无线电高度}
+			\label{fig:第6次航班海拔高度与无线电高度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第6次航班空速、地速、风速.pdf}
+			\caption{第6次航班空速、地速、风速}
+			\label{fig:第6次航班空速、地速、风速}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第6次航班飞行参量.pdf}
+			\caption{第6次航班飞行参量}
+			\label{fig:第6次航班飞行参量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第6次航班下滑道偏差.pdf}
+			\caption{第6次航班下滑道偏差}
+			\label{fig:第6次航班下滑道偏差}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第6次航班航向道偏差.pdf}
+			\caption{第6次航班航向道偏差}
+			\label{fig:第6次航班航向道偏差}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第6次航班俯仰角率、下降率.pdf}
+			\caption{第6次航班俯仰角率、下降率}
+			\label{fig:第6次航班俯仰角率、下降率}
+		\end{minipage}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第7次航班海拔高度与无线电高度.pdf}
+			\caption{第7次航班海拔高度与无线电高度}
+			\label{fig:第7次航班海拔高度与无线电高度}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第7次航班空速、地速、风速.pdf}
+			\caption{第7次航班空速、地速、风速}
+			\label{fig:第7次航班空速、地速、风速}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第7次航班飞行参量.pdf}
+			\caption{第7次航班飞行参量}
+			\label{fig:第7次航班飞行参量}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第7次航班下滑道偏差.pdf}
+			\caption{第7次航班下滑道偏差}
+			\label{fig:第7次航班下滑道偏差}
+		\end{minipage}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第7次航班航向道偏差.pdf}
+			\caption{第7次航班航向道偏差}
+			\label{fig:第7次航班航向道偏差}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.98\linewidth]{第7次航班俯仰角率、下降率.pdf}
+			\caption{第7次航班俯仰角率、下降率}
+			\label{fig:第7次航班俯仰角率、下降率}
+		\end{minipage}
 	\end{figure}
 \newpage
 % \phantomsection
@@ -848,8 +1623,23 @@
 	\noindent{\heiti [B]支撑文件列表}
 	~\\
 
-	支撑文件列表如下（列表中不包含原始数据集）：
+	支撑文件列表如下（列表中不包含原始数据集以及中途产生的临时数据文件）：
 
+\begin{table}[H]
+	\centering
+	\scalebox{0.85}{
+	  \begin{tabular}{cc}
+	  \toprule
+	  \textbf{文件夹名} & \textbf{描述} \\
+	  \midrule
+	  html文件 & 包括所有解决问题的源程序运行结果 \\
+	  ipynb文件 & 包括所有解决问题的源程序源代码 \\
+	  py文件  & 包括所有解决问题的源程序输出python文件 \\
+	  仿真结果  & 包括附件1的8次航班全时刻的飞行状态预警 \\
+	  \bottomrule
+	  \end{tabular}}
+\end{table}
+  
 \newpage
 
 	\noindent{\heiti [C]使用的软件、环境}
@@ -3546,7 +4336,7 @@ def draw(data,i):
     plt.figure(figsize=(12, 6))
     plt.plot(x, y1, ms=5, label='杆量', color="blue")
     plt.plot(x, y2, ms=5, label='盘量', color="red")
-    plt.plot(x, y3, ms=5, label='着陆G值', color="green")
+    plt.plot(x, y3, ms=5, label='着陆阶段G值', color="green")
     plt.plot(x, y4, ms=5, label='姿态（俯仰角）', color="black")
     plt.plot(x, y5, ms=5, label='坡度（左负右正）', color="orange")
     plt.xlabel('时刻',size=13)
@@ -3942,5 +4732,750 @@ print(XGB_5K, '\n', XGB_5K.mean())
 print(XGB_5K.std())
 
 
+\end{python}
+\newpage
+\textbf{D.11 问题五仿真}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[2]:
+
+
+data1=pd.read_excel("Data\\First\\New\\201404070532.xlsx",sheet_name="201404070532")
+data2=pd.read_excel("Data\\First\\New\\201404071917.xlsx",sheet_name="201404071917")
+data3=pd.read_excel("Data\\First\\New\\201404080617.xlsx",sheet_name="201404080617")
+data4=pd.read_excel("Data\\First\\New\\201404081034.xlsx",sheet_name="201404081034")
+data5=pd.read_excel("Data\\First\\New\\201404090110.xlsx",sheet_name="201404090110")
+data6=pd.read_excel("Data\\First\\New\\201404091701.xlsx",sheet_name="201404091701")
+data7=pd.read_excel("Data\\First\\New\\201404100843.xlsx",sheet_name="201404100843")
+data8=pd.read_excel("Data\\First\\New\\201404101159.xlsx",sheet_name="201404101159")
+
+
+# In[3]:
+
+
+def MaxFactor(data):
+    data['Max_G']=data[['着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒','着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒']].max(axis=1)
+    data['Max_姿态']=data[['姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4']].max(axis=1)
+    data['Max_杆量']=data[['杆量','杆量.1','杆量.2','杆量.3','杆量.4']].max(axis=1)
+    data['Max_坡度']=data[['坡度（左负右正）','坡度（左负右正）.1']].max(axis=1)
+    data['Max_盘量']=data[['盘量','盘量.1','盘量.2','盘量.3','盘量.4']].max(axis=1)
+    return data
+
+
+# In[4]:
+
+
+data1A=MaxFactor(data1)
+data2A=MaxFactor(data2)
+data3A=MaxFactor(data3)
+data4A=MaxFactor(data4)
+data5A=MaxFactor(data5)
+data6A=MaxFactor(data6)
+data7A=MaxFactor(data7)
+data8A=MaxFactor(data8)
+
+
+# In[5]:
+
+
+def FactorSelect(data):
+    New=data[['海拔高度','无线电高度',
+              '计算空速','地速',
+              'Max_G','Max_姿态','Max_杆量','Max_坡度','Max_盘量',
+              '风向','风速',
+              '下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+              '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）',
+              '俯仰角率','下降率','飞机重量']]
+    return New
+
+
+# In[6]:
+
+
+data1AN=FactorSelect(data1A)
+data2AN=FactorSelect(data2A)
+data3AN=FactorSelect(data3A)
+data4AN=FactorSelect(data4A)
+data5AN=FactorSelect(data5A)
+data6AN=FactorSelect(data6A)
+data7AN=FactorSelect(data7A)
+data8AN=FactorSelect(data8A)
+
+
+# In[7]:
+
+
+import matplotlib.pyplot as plt
+
+
+# In[8]:
+
+
+def draw_HBWXD(data,i):
+    y1=data['海拔高度']
+    y2=data['无线电高度']
+    plt.rcParams['font.sans-serif']=['SimHei']
+    plt.rcParams['axes.unicode_minus']=False
+    plt.figure(figsize=(14, 4))
+    plt.plot(y1, ms=5, label='海拔高度', color="blue")
+    plt.plot(y2, ms=5, label='无线电高度', color="red")
+    plt.xlabel('时刻',size=13)
+    plt.ylabel('量值',size=13)
+    plt.xticks(font='Times New Roman',size=12)
+    plt.yticks(font='Times New Roman',size=12)
+    plt.legend()
+    plt.savefig("Figures\\全航段\\第"+str(i)+"次航班海拔高度与无线电高度.pdf")
+
+
+# In[9]:
+
+
+def draw_KSDS(data,i):
+    y1=data['计算空速']
+    y2=data['地速']
+    y3=data['风速']
+    plt.rcParams['font.sans-serif']=['SimHei']
+    plt.rcParams['axes.unicode_minus']=False
+    plt.figure(figsize=(14, 4))
+    plt.plot(y1, ms=5, label='计算空速', color="blue")
+    plt.plot(y2, ms=5, label='地速', color="red")
+    plt.plot(y3, ms=5, label='风速', color="green")
+    plt.xlabel('时刻',size=13)
+    plt.ylabel('量值',size=13)
+    plt.xticks(font='Times New Roman',size=12)
+    plt.yticks(font='Times New Roman',size=12)
+    plt.legend()
+    plt.savefig("Figures\\全航段\\第"+str(i)+"次航班空速、地速、风速.pdf")
+
+
+# In[10]:
+
+
+def draw_FV(data,i):
+    y1=data['Max_G']
+    y2=data['Max_姿态']
+    y3=data['Max_杆量']
+    y4=data['Max_坡度']
+    y5=data['Max_盘量']
+    plt.rcParams['font.sans-serif']=['SimHei']
+    plt.rcParams['axes.unicode_minus']=False
+    plt.figure(figsize=(14, 5))
+    plt.plot(y1, ms=5, label='G', color="green")
+    plt.plot(y2, ms=5, label='姿态', color="black")
+    plt.plot(y3, ms=5, label='杆量', color="blue")
+    plt.plot(y4, ms=5, label='坡度', color="orange")
+    plt.plot(y5, ms=5, label='盘量', color="red")
+    plt.xlabel('时刻',size=13)
+    plt.ylabel('量值',size=13)
+    plt.xticks(font='Times New Roman',size=12)
+    plt.yticks(font='Times New Roman',size=12)
+    plt.legend()
+    plt.savefig("Figures\\全航段\\第"+str(i)+"次航班飞行参量.pdf")
+
+
+# In[11]:
+
+
+def draw_XHDPC(data,i):
+    y1=data['下滑道偏差（C）']
+    y2=data['下滑道偏差（L）']
+    y3=data['下滑道偏差（R）']
+    plt.rcParams['font.sans-serif']=['SimHei']
+    plt.rcParams['axes.unicode_minus']=False
+    plt.figure(figsize=(14, 4))
+    plt.plot(y1, ms=5, label='下滑道偏差（C）', color="blue")
+    plt.plot(y2, ms=5, label='下滑道偏差（L）', color="red")
+    plt.plot(y3, ms=5, label='下滑道偏差（R）', color="orange")
+    plt.xlabel('时刻',size=13)
+    plt.ylabel('量值',size=13)
+    plt.xticks(font='Times New Roman',size=12)
+    plt.yticks(font='Times New Roman',size=12)
+    plt.legend()
+    plt.savefig("Figures\\全航段\\第"+str(i)+"次航班下滑道偏差.pdf")
+
+
+# In[12]:
+
+
+def draw_HXDPC(data,i):
+    y1=data['航向道偏差（C）']
+    y2=data['航向道偏差（L）']
+    y3=data['航向道偏差（R）']
+    plt.rcParams['font.sans-serif']=['SimHei']
+    plt.rcParams['axes.unicode_minus']=False
+    plt.figure(figsize=(14, 4))
+    plt.plot(y1, ms=5, label='航向道偏差（C）', color="green")
+    plt.plot(y2, ms=5, label='航向道偏差（L）', color="red")
+    plt.plot(y3, ms=5, label='航向道偏差（R）', color="orange")
+    plt.xlabel('时刻',size=13)
+    plt.ylabel('量值',size=13)
+    plt.xticks(font='Times New Roman',size=12)
+    plt.yticks(font='Times New Roman',size=12)
+    plt.legend()
+    plt.savefig("Figures\\全航段\\第"+str(i)+"次航班航向道偏差.pdf")
+
+
+# In[13]:
+
+
+def draw_FYJXJ(data,i):
+    y1=data['俯仰角率']
+    y2=data['下降率']
+    plt.rcParams['font.sans-serif']=['SimHei']
+    plt.rcParams['axes.unicode_minus']=False
+    plt.figure(figsize=(14, 4))
+    plt.plot(y1, ms=5, label='俯仰角率', color="green")
+    plt.plot(y2, ms=5, label='下降率', color="red")
+    plt.xlabel('时刻',size=13)
+    plt.ylabel('量值',size=13)
+    plt.xticks(font='Times New Roman',size=12)
+    plt.yticks(font='Times New Roman',size=12)
+    plt.legend()
+    plt.savefig("Figures\\全航段\\第"+str(i)+"次航班俯仰角率、下降率.pdf")
+
+
+# In[14]:
+
+
+def draw_M(data,i):
+    y=data['飞机重量']
+    plt.rcParams['font.sans-serif']=['SimHei']
+    plt.rcParams['axes.unicode_minus']=False
+    plt.figure(figsize=(14, 4))
+    plt.plot(y, ms=5, label='飞机重量', color="green")
+    plt.xlabel('时刻',size=13)
+    plt.ylabel('量值',size=13)
+    plt.xticks(font='Times New Roman',size=12)
+    plt.yticks(font='Times New Roman',size=12)
+    plt.legend()
+    plt.savefig("Figures\\全航段\\第"+str(i)+"次航班飞机重量.pdf")
+
+
+# # 飞机重量
+
+# In[15]:
+
+
+draw_M(data1AN,1)
+draw_M(data2AN,2)
+draw_M(data3AN,3)
+draw_M(data4AN,4)
+draw_M(data5AN,5)
+draw_M(data6AN,6)
+draw_M(data7AN,7)
+draw_M(data8AN,8)
+
+
+# # 下降率、俯仰角率
+
+# In[16]:
+
+
+draw_FYJXJ(data1AN,1)
+draw_FYJXJ(data2AN,2)
+draw_FYJXJ(data3AN,3)
+draw_FYJXJ(data4AN,4)
+draw_FYJXJ(data5AN,5)
+draw_FYJXJ(data6AN,6)
+draw_FYJXJ(data7AN,7)
+draw_FYJXJ(data8AN,8)
+
+
+# # 航向道偏差
+
+# In[17]:
+
+
+draw_HXDPC(data1AN,1)
+draw_HXDPC(data2AN,2)
+draw_HXDPC(data3AN,3)
+draw_HXDPC(data4AN,4)
+draw_HXDPC(data5AN,5)
+draw_HXDPC(data6AN,6)
+draw_HXDPC(data7AN,7)
+draw_HXDPC(data8AN,8)
+
+
+# # 下滑道偏差
+
+# In[18]:
+
+
+draw_XHDPC(data1AN,1)
+draw_XHDPC(data2AN,2)
+draw_XHDPC(data3AN,3)
+draw_XHDPC(data4AN,4)
+draw_XHDPC(data5AN,5)
+draw_XHDPC(data6AN,6)
+draw_XHDPC(data7AN,7)
+draw_XHDPC(data8AN,8)
+
+
+# # 五因素
+
+# In[19]:
+
+
+draw_FV(data1AN,1)
+draw_FV(data2AN,2)
+draw_FV(data3AN,3)
+draw_FV(data4AN,4)
+draw_FV(data5AN,5)
+draw_FV(data6AN,6)
+draw_FV(data7AN,7)
+draw_FV(data8AN,8)
+
+
+# # 速度
+
+# In[20]:
+
+
+draw_KSDS(data1AN,1)
+draw_KSDS(data2AN,2)
+draw_KSDS(data3AN,3)
+draw_KSDS(data4AN,4)
+draw_KSDS(data5AN,5)
+draw_KSDS(data6AN,6)
+draw_KSDS(data7AN,7)
+draw_KSDS(data8AN,8)
+
+
+# # 海拔、无线电高度
+
+# In[21]:
+
+
+draw_HBWXD(data1AN,1)
+draw_HBWXD(data2AN,2)
+draw_HBWXD(data3AN,3)
+draw_HBWXD(data4AN,4)
+draw_HBWXD(data5AN,5)
+draw_HBWXD(data6AN,6)
+draw_HBWXD(data7AN,7)
+draw_HBWXD(data8AN,8)
+
+
+\end{python}
+\begin{python}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import pandas as pd
+
+
+# In[2]:
+
+
+data1=pd.read_excel("Data\\First\\New\\201404070532.xlsx",sheet_name="201404070532")
+data2=pd.read_excel("Data\\First\\New\\201404071917.xlsx",sheet_name="201404071917")
+data3=pd.read_excel("Data\\First\\New\\201404080617.xlsx",sheet_name="201404080617")
+data4=pd.read_excel("Data\\First\\New\\201404081034.xlsx",sheet_name="201404081034")
+data5=pd.read_excel("Data\\First\\New\\201404090110.xlsx",sheet_name="201404090110")
+data6=pd.read_excel("Data\\First\\New\\201404091701.xlsx",sheet_name="201404091701")
+data7=pd.read_excel("Data\\First\\New\\201404100843.xlsx",sheet_name="201404100843")
+data8=pd.read_excel("Data\\First\\New\\201404101159.xlsx",sheet_name="201404101159")
+dataAll=pd.read_excel("Data\\First\\New\\汇总.xlsx",sheet_name="Sheet1")
+
+
+# In[3]:
+
+
+def MaxFactor(data):
+    data['G值']=data[['着陆G值0.1秒','着陆G值0.2秒','着陆G值0.3秒','着陆G值0.4秒','着陆G值0.5秒',
+                      '着陆G值0.6秒','着陆G值0.7秒','着陆G值0.8秒','着陆G值0.9秒','着陆G值1秒']].max(axis=1)
+    data['姿态']=data[['姿态（俯仰角）','姿态（俯仰角）.1','姿态（俯仰角）.2','姿态（俯仰角）.3','姿态（俯仰角）.4']].max(axis=1)
+    data['杆量']=data[['杆量','杆量.1','杆量.2','杆量.3','杆量.4']].max(axis=1)
+    data['坡度']=data[['坡度（左负右正）','坡度（左负右正）.1']].max(axis=1)
+    data['盘量']=data[['盘量','盘量.1','盘量.2','盘量.3','盘量.4']].max(axis=1)
+    data['左油门杆位置']=data[['左发油门杆位置（角度）','左发油门杆位置（角度）.1']].max(axis=1)
+    data['右油门杆位置']=data[['右发油门杆位置（角度）','右发油门杆位置（角度）.1']].max(axis=1)
+    return data
+
+
+# In[4]:
+
+
+def FactorSelect(data):
+    New=data[['具体时间',
+              '计算空速','G值','姿态','杆量','坡度','盘量',
+              '下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+              '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）',
+              '俯仰角率','下降率','RUDD位置','左油门杆位置','右油门杆位置']]
+    return New
+
+
+# In[5]:
+
+
+dataAI=MaxFactor(dataAll)
+
+
+# In[6]:
+
+
+dataAF=FactorSelect(dataAI)
+
+
+# In[7]:
+
+
+dataAF
+
+
+# In[8]:
+
+
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
+
+
+# In[9]:
+
+
+def drawHist(x):
+    plt.figure(figsize=(10,8))
+    dataAF.hist(column=x,bins=150,color='#9ACD32',grid=False)
+    plt.xticks(font='Times New Roman',fontsize=12)
+    plt.yticks(font='Times New Roman',fontsize=12)
+    plt.savefig('Figures\\{}.pdf'.format(x))
+
+
+# In[10]:
+
+
+drawHist('计算空速')
+drawHist('G值')
+drawHist('姿态')
+drawHist('杆量')
+drawHist('坡度')
+drawHist('盘量')
+drawHist('下滑道偏差（C）')
+drawHist('下滑道偏差（L）')
+drawHist('下滑道偏差（R）')
+drawHist('航向道偏差（C）')
+drawHist('航向道偏差（L）')
+drawHist('航向道偏差（R）')
+drawHist('俯仰角率')
+drawHist('下降率')
+drawHist('RUDD位置')
+drawHist('左油门杆位置')
+drawHist('右油门杆位置')
+
+
+# In[11]:
+
+
+def calculateRateTh(x):
+    t=dataAF[x].diff()
+    mean=t.mean()
+    std=t.std()
+    max=mean+3*std
+    min=mean-3*std
+    return min,max
+
+
+# In[12]:
+
+
+def calculateTh(x):
+    mean=dataAF[x].mean()
+    std=dataAF[x].std()
+    max=mean+3*std
+    min=mean-3*std
+    return min,max
+
+
+# In[13]:
+
+
+RateTh=['姿态','坡度','RUDD位置','左油门杆位置','右油门杆位置']
+Th=['G值','杆量','盘量','下滑道偏差（C）','下滑道偏差（L）','下滑道偏差（R）',
+    '航向道偏差（C）','航向道偏差（L）','航向道偏差（R）','俯仰角率','下降率']
+
+
+# In[14]:
+
+
+for i in RateTh:
+    min,max=calculateRateTh(i)
+    print(i,min,max)
+
+
+# In[15]:
+
+
+for i in Th:
+    min,max=calculateTh(i)
+    print(i,min,max)
+
+
+# 姿态 -0.1823728785192135 0.18236945078921915
+# 坡度 -0.6673918000300177 0.6673918000300177
+# RUDD位置 -0.06688924609154025 0.06688922658809789
+# 左油门杆位置 -0.7397604532999682 0.7397604532999682
+# 右油门杆位置 -0.7364677711308804 0.7364677711308804
+# 
+# G值 0.9537159362101948 1.0635978346157227
+# 杆量 -0.045490727710496254 0.044095951682060375
+# 盘量 -0.061697333362055275 0.054986543622766275
+# 下滑道偏差（C） -3.272516829802762 3.346957205632264
+# 下滑道偏差（L） -3.088455218634214 3.147513401994933
+# 下滑道偏差（R） -3.0607728912464105 3.1096427210309474
+# 航向道偏差（C） -4.9660114773697135 4.740072025511289
+# 航向道偏差（L） -4.952541392349814 4.725793916814326
+# 航向道偏差（R） -4.961188798370152 4.756167466584085
+# 俯仰角率 -0.269455167818758 0.2101911997652408
+# 下降率 -1660.3728475810756 1660.7590236085364
+
+# In[16]:
+
+
+def zitai(x):
+    if x<=-0.1823728785192135 or x>=0.18236945078921915:
+        return '异常'
+    else:
+        return '正常'
+
+
+def podu(x):
+    if x<=-0.6673918000300177 or x>=0.6673918000300177:
+        return '异常'
+    else:
+        return '正常'
+
+
+def rudd(x):
+    if x<=-0.06688924609154025 or x>=0.06688922658809789:
+        return '异常'
+    else:
+        return '正常'
+
+
+def zuoyoumengan(x):
+    if x<=-0.7397604532999682 or x>=0.7397604532999682:
+        return '异常'
+    else:
+        return '正常'
+
+
+def youyoumengan(x):
+    if x<=-0.7364677711308804 or x>=0.7364677711308804:
+        return '异常'
+    else:
+        return '正常'
+
+
+def g(x):
+    if x<=0.9537159362101948:
+        return '失重'
+    elif x>=1.0635978346157227:
+        return '超重'
+    else:
+        return '正常'
+
+
+def gangliang(x):
+    if x<=-0.045490727710496254:
+        return '拉杆过度'
+    elif x>=0.044095951682060375:
+        return '松杆（推杆）过度'
+    else:
+        return '正常'
+
+
+def panliang(x):
+    if x<=-0.061697333362055275:
+        return '左旋过度'
+    elif x>=0.054986543622766275:
+        return '右旋过度'
+    else:
+        return '正常'
+
+
+def xiahuadaoC(x):
+    if x<=-3.272516829802762 or x>=3.346957205632264:
+        return '异常C'
+    else:
+        return '正常'
+
+
+def xiahuadaoL(x):
+    if x<=-3.088455218634214 or x>=3.147513401994933:
+        return '异常L'
+    else:
+        return '正常'
+
+
+def xiahuadaoR(x):
+    if x<=-3.0607728912464105 or x>=3.1096427210309474:
+        return '异常R'
+    else:
+        return '正常'
+
+
+def hangxiangdaoC(x):
+    if x<=-4.9660114773697135 or x>=4.740072025511289:
+        return '异常C'
+    else:
+        return '正常'
+
+
+def hangxiangdaoL(x):
+    if x<=-4.952541392349814 or x>=4.725793916814326:
+        return '异常L'
+    else:
+        return '正常'
+
+
+def hangxiangdaoR(x):
+    if x<=-4.961188798370152 or x>=4.756167466584085:
+        return '异常R'
+    else:
+        return '正常'
+
+
+def fuyangjiaolv(x):
+    if x<=-0.269455167818758 or x>=0.2101911997652408:
+        return '异常'
+    else:
+        return '正常'
+
+
+def xiajianglv(x):
+    if x<=-1660.3728475810756 or x>=1660.7590236085364:
+        return '异常'
+    else:
+        return '正常'
+
+
+# In[17]:
+
+
+def System(data):
+    data=FactorSelect(MaxFactor(data))
+    data['飞行姿态变化']=data['姿态'].diff().apply(lambda x:zitai(x))
+    data['坡度变化']=data['坡度'].diff().apply(lambda x:podu(x))
+    data['RUDD位置变化']=data['RUDD位置'].diff().apply(lambda x:rudd(x))
+    data['左油门杆位置变化']=data['左油门杆位置'].diff().apply(lambda x:zuoyoumengan(x))
+    data['右油门杆位置变化']=data['右油门杆位置'].diff().apply(lambda x:youyoumengan(x))
+    data['失重超重情况']=data['G值'].apply(lambda x:g(x))
+    data['杆量情况']=data['杆量'].apply(lambda x:gangliang(x))
+    data['盘量情况']=data['盘量'].apply(lambda x:panliang(x))
+    data['下滑道偏差（C）情况']=data['下滑道偏差（C）'].apply(lambda x:xiahuadaoC(x))
+    data['下滑道偏差（L）情况']=data['下滑道偏差（L）'].apply(lambda x:xiahuadaoL(x))
+    data['下滑道偏差（R）情况']=data['下滑道偏差（R）'].apply(lambda x:xiahuadaoR(x))
+    data['航向道偏差（C）情况']=data['航向道偏差（C）'].apply(lambda x:hangxiangdaoC(x))
+    data['航向道偏差（L）情况']=data['航向道偏差（L）'].apply(lambda x:hangxiangdaoL(x))
+    data['航向道偏差（R）情况']=data['航向道偏差（R）'].apply(lambda x:hangxiangdaoR(x))
+    data['俯仰角率情况']=data['俯仰角率'].apply(lambda x:fuyangjiaolv(x))
+    data['下降率情况']=data['下降率'].apply(lambda x:xiajianglv(x))
+    return data
+
+
+# In[18]:
+
+
+data1V=System(data1)
+data2V=System(data2)
+data3V=System(data3)
+data4V=System(data4)
+data5V=System(data5)
+data6V=System(data6)
+data7V=System(data7)
+data8V=System(data8)
+
+
+# In[19]:
+
+
+data1V
+
+
+# In[20]:
+
+
+data2V
+
+
+# In[21]:
+
+
+data3V
+
+
+# In[22]:
+
+
+data4V
+
+
+# In[23]:
+
+
+data5V
+
+
+# In[24]:
+
+
+data6V
+
+
+# In[25]:
+
+
+data7V
+
+
+# In[26]:
+
+
+data8V
+
+
+\end{python}
+\newpage
+\textbf{D.12 南丁格尔玫瑰图}
+\begin{python}
+import pandas as pd
+from pyecharts.charts import Pie
+from pyecharts import options as opts
+from snapshot_phantomjs import snapshot
+from pyecharts.render import make_snapshot
+
+
+def draw_pie(grade, num):
+    color_series = ['#14ADCF', '#209AC9', '#1E91CA','#2C6BA0', '#2B55A1', '#2D3D8E', '#44388E', '#6A368B','#7D3990', '#A63F98', '#C31C88', '#D52178', '#D5225B']
+
+    df = pd.DataFrame({'grade': grade, 'num': num})
+    df.sort_values(by='num', ascending=False, inplace=True)
+    v = df['grade'].values.tolist()
+    d = df['num'].values.tolist()
+    pie1 = Pie(init_opts=opts.InitOpts(width='880px', height='800px'))
+    pie1.set_colors(color_series)
+    pie1.add("", [list(z) for z in zip(v, d)],
+             radius=["20%","80%"],
+             center=["50%", "60%"],
+             rosetype="area")
+    pie1.set_global_opts(legend_opts=opts.LegendOpts(is_show=False), toolbox_opts=opts.ToolboxOpts())
+    pie1.set_series_opts(label_opts=opts.LabelOpts(is_show=True, position="inside", font_size=12,formatter="{b} 阶段超限 {c} 次", font_style="italic",font_weight="bold", font_family="Microsoft YaHei"), )
+    make_snapshot(snapshot, pie1.render(), 'Figures\\NightingaleRoseDiagram.png', is_remove_html=True)
+
+
+draw_pie(['着陆','空中','进近','（着陆）地面','未知','（起飞）地面','起飞'],[26406,11119,5591,398,283,158,148])
 \end{python}
 \end{document}

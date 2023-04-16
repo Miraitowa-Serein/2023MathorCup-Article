@@ -1,6 +1,6 @@
 % github:https://github.com/sikouhjw/MathorCupmodeling
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{MathorCupmodeling}[2020/01/14 version 1.0]
+\ProvidesClass{MathorCupModeling}[2020/01/14 version 1.0]
 
 % 设置纸张为A4纸,行距为1.34倍,设置默认字号为小4
 \LoadClass[oneside,a4paper,UTF8,linespread=1.34,zihao=-4]{ctexart}
@@ -59,7 +59,7 @@
 \phantom{1}\hfill{\zihao{4}\@timu}\hfill\phantom{1}\\
 \phantom{1}\hfill{\label{zy}{\heiti 摘\hspace{2pc}要}}\hfill\phantom{1}\pdfbookmark[1]{摘要}{zy}\par%
 }
-{\\\phantom{1}\\{\heiti 关键词}：\@keyword\thispagestyle{empty}\setcounter{page}{-1}
+{\\\phantom{1}\\{\heiti 关键词}：\@keyword\thispagestyle{empty}\setcounter{page}{-2}
 \newpage\thispagestyle{empty}
 }
 
