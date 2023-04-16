@@ -3,6 +3,7 @@
 \documentclass{MathorCupModeling}
 \usepackage{mwe,color,float}
 \usepackage[linesnumbered,ruled]{algorithm2e}
+\usepackage{setspace}
 \everymath{\displaystyle}
 
 \extrafloats{100}
@@ -89,7 +90,7 @@
 	\end{itemize}
 	\subsection{问题一模型的建立与求解}
 	对于问题一，我们首先分析数据的特点，依据时间特征及对应的各参量进行合理性分析，对错误值进行剔除，提高数据的真实性，并以此分析数据的可靠性；之后我们依据刘柳\textcolor{blue}{\cite{Paper:刘柳}}、龙海江\textcolor{blue}{\cite{Paper:龙海江}}学者的研究结成果，采用层次聚类法对多维度指标进行聚类分析，同时在此基础上利用主成分分析累计方差解释，确定影响飞行安全的关键性指标，并利用熵权法对其重要性进行量化分析。此外注重定性及定量的分析研究，结果与现实情况相近，选取结果良好。
-	\subsubsection{附件1数据预处理}
+	\subsubsection{附件1数据预处理及可靠性研究}
 	通过对附件1的8个Excel表格依此分析，并结合快速存取记录器（Quick Access Recoder，QAR）数据的特点，我们发现以下几点可能的错误方面：
 	\begin{itemize}
 		\item \textbf{起始时刻不为飞机开始运行时刻}：通过对8张表8次航班的全航段记录数据的逐一分析，我们发现表格“201404091701”记录器开始记录的时刻为2014年4月9日14时23分51秒，而该航班实际运行时间应该为2014年4月9日17时01分50秒，因此我们认为该表格的起始时刻不应为前者，而应是飞机开始运行的时刻。因此我们将该表格的起始时刻校正，即删除14时23分51秒的数据，保留17时01分50秒之后的数据。而对于其余表格并未发现相同错误。
@@ -129,7 +130,7 @@
 	  \end{tabular}}
 	\label{tab:数据剔除率及保留率}
 \end{table}
-	为了再次验证数据在时刻层面的连续性，即每行记录的数据均间隔为1秒，我们对所有航班进行时刻点计算，均与处理后的数据记录条数一致，从而也反映出保留下的数据的合理性。但此处，我们并未对其他方面进行分析，如异常值等，也并未对其进行剔除，这是由于我们查阅相关资料，结合李瀚明\textcolor{blue}{\cite{Paper:李瀚明}}学者及胡占桥老师\textcolor{blue}{\cite{Paper:胡占桥}}的研究，及对实际数据的分析，给出下几点原因：\begin{itemize}
+	为了再次验证数据在时刻层面的连续性，即每行记录的数据均间隔为1秒，我们对所有航班进行时刻点计算，均与处理后的数据记录条数一致，从而也反映出保留下的数据的合理性。但此处，我们并未对其他方面进行分析，如异常值等，也并未对其进行剔除，这是由于我们查阅相关资料，结合李瀚明\textcolor{blue}{\cite{Paper:李瀚明}}学者及胡占桥\textcolor{blue}{\cite{Paper:胡占桥}}老师的研究，及对实际数据的分析，给出下几点原因：\begin{itemize}
 		\item \textbf{传感器存在一定误差}，QAR误差可分为三种：多报、漏报、误报。多报即为生成了额外的数据点，造成数据冗余；漏报即为未生成相应时刻的数据点；误报即为某些点因QAR仪器，造成数据采集有误；
 		\item \textbf{QAR存在一定局限性}，记录的数据可能会有少部分产生问题，但浮值不会变化过大，这是由仪器本身所决定，而时刻数据（上述分析的多报）即为其局限性的一方面；
 		\item \textbf{部分异常值可能为机组人员误操作造成}，即我们很难在一定程度上区分误报与机组人员误操作造成异常值记录的数据，若我们将其剔除，则会使原始数据在信息解释方面造成一定失真，对数据进行了“篡改”，从而影响后续分析。
@@ -141,7 +142,7 @@
 	此外，通过读取附件1数据，查看其空缺值情况，发现“起落架”\textcolor{blue}{\footnote{这里指标名称已由原数据的英文修改为中文指标。}}该列数据缺失值较多，这里我们以附件1中表格“201404101159”为例\textcolor{blue}{\footnote{对于问题一，在本文正文，我们均以附件1中表格“201404101159”为例进行分析，后文简称”航线8“，其余表格的分析结果也将在正文及附录中呈现。}}，其空缺值情况如\textcolor{blue}{\cref{fig:附件1航班8缺失值}}所示。
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.66\linewidth]{附件1航班8缺失值.pdf}
+		\includegraphics[width=0.80\linewidth]{附件1航班8缺失值.pdf}
 		\caption{附件1航班8缺失值}
 		\label{fig:附件1航班8缺失值}
 	\end{figure}
@@ -173,7 +174,7 @@
 \end{table}
 
 	最后，我们发现附件1的维度较高，且各维度数据量纲不一，对后续模型的建立会产生较大影响，因此这里我们对所有数据进行标准化及归一化处理，其区别、后续利用方式及计算方式如下：
-	\begin{itemize}
+	\begin{itemize}\label{数据标准化}
 		\item \textbf{数据标准化}：采用\textbf{Z-score}方法处理，用于主成分分析（Principal Component Analysis，PCA）累计方差贡献率（Cumulative Variance Contribution Rate，CVCR）及层次聚类（Hierarchical Clustering，HC）模型的建立。同时该标准化处理方法适合当代嘈杂的大数据场景\textcolor{blue}{\cite{Paper:标准化}}。因此对于大样本的数据，如出现部分异常值，使用该方法对最终结果影响较小。其计算方式如下：
 		
 		对于某一列数据$x=\left[x_1,x_2,\cdots,x_m\right]^{\mathrm{T}}$，其平均值为
@@ -198,10 +199,10 @@
 		\item \textbf{Z-score}方法，使得原数据经过处理后，数据集中于0附近，即均值为0，标准差为1。其适用于PCA-CVCR及HC模型的建立，大大提升模型的效率。
 		\item \textbf{Min-Max}方法，使得原数据经过处理后，在设定的最大值与最小值之间，方便EWM的建立，避免对数运算的错误。
 	\end{itemize}
-	\subsubsection{模型的建立}
-	对于问题一，我们建立PCA-CVCR、HC及EWM模型，过程如下分析。
+	\subsubsection{筛选影响飞行安全的重要性指标}
+	对于问题一，我们建立PCA-CVCR、HC及EWM模型，分析及讨论过程如下。
 
-	\textbf{主成分分析累计方差贡献率（Principal Component Analysis Cumulative - Variance Contribution Rate，PCA-CVCR）}：由于附件1所有数据集较为复杂，且为高维数据，而PCA作为一种可以将原始高维数据转换为新的低维数据的方法，故我们采用此方法对数据集进行处理。在此我们将对PCA累计方差解释率作出解释。在PCA过程中，各主要成分所占方差比例的累加和，往往以百分比的方式呈现。PCA累计方差解释率对选择合适的主成分进行降维起到至关重要的作用。在PCA降维中我们往往基于PCA累计方差解释率的高低来选择一定数量的主成分以代表原始数据的特征，PCA累计方差解释率越高，说明前几个主成分所能代表的方差比例越高，便可选择这些主成分降维以保留更多信息。其计算方式如下：
+	\textbf{主成分分析累计方差贡献率（Principal Component Analysis Cumulative - Variance Contribution Rate，PCA-CVCR）}\label{PCA-CVCR}：由于附件1所有数据集较为复杂，且为高维数据，而PCA作为一种可以将原始高维数据转换为新的低维数据的方法，故我们采用此方法对数据集进行处理。在此我们将对PCA累计方差解释率作出解释。在PCA过程中，各主要成分所占方差比例的累加和，往往以百分比的方式呈现。PCA累计方差解释率对选择合适的主成分进行降维起到至关重要的作用。在PCA降维中我们往往基于PCA累计方差解释率的高低来选择一定数量的主成分以代表原始数据的特征，PCA累计方差解释率越高，说明前几个主成分所能代表的方差比例越高，便可选择这些主成分降维以保留更多信息。其计算方式如下：
 	
 	根据标准化后的数据集计算协方差矩阵
 	\begin{equation}
@@ -285,6 +286,7 @@
 		\item \textbf{飞机状态}：姿态（俯仰角）、航向道偏差、磁航向、左侧发动机油门N1值、右侧发动机油门N1值、下滑道偏差、左发油门杆位置（角度）、右发油门杆位置（角度）、坡度（左负右正）、俯仰角率。
 	\end{itemize}
 
+	\subsubsection{指标定量及定性分析}
 	下面我们将对上述重要程度较高的因素进行量化分析，这里我们使用熵权法进行分析。此外我们还需要对前文叙述的部分因素进行定性分析。
 
 	\textbf{熵权法（Entropy Weight Method, EWM）}是一种指标客观影响程度的量化方法。当信息熵越大时，信息的无序程度越大，此时，信息价值越小，指标权重就越小\textcolor{blue}{\cite{Paper:EWMO}}。其计算步骤如下：
@@ -325,7 +327,7 @@
 
 	在这里，我们需要注意，附件1并未给出此刻飞行的安全状态，即属于无标签类型数据。因此，我们在这里无须对其进行评价分析，而是获取其特征性数据，用于后续筛选重要性指标。从而对于上述的\textbf{Step 1}我们无须进行，即直接进行\textbf{Step 2}至\textbf{Step 4}的计算。
 
-	通过上述步骤，我们分别计算出三层方面下各自因素的权重，并对其余7次航班均作一致处理，得到各航班不通指标的权重，再计算平均值得到最终量化结果。此外，我们还计算出其方差与标准差，确定置信区间以及分析量化结果的合理性，结果见\textcolor{blue}{\cref{tab:重要指标量化}}。
+	通过上述步骤，我们分别计算出三层方面下各自因素的权重，并对其余7次航班均作一致处理，得到各航班不通指标的权重，再计算平均值得到最终量化结果。此外，我们还计算出其方差与标准差，确定置信区间以及分析量化结果的合理性，结果见\textcolor{blue}{\cref{tab:重要指标量化}}。同时我们还绘制权重组合图，如\textcolor{blue}{\cref{fig:权重组合}}所示。
 \begin{table}[H]
 	\centering
 	\caption{影响飞行安全的19个重要指标从属于三个层级的量化值结果}
@@ -359,7 +361,12 @@
 	  \end{tabular}}
 	\label{tab:重要指标量化}
 \end{table}
-
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.85\textwidth]{权重组合.pdf}
+		\caption{影响飞行安全的19个重要指标从属于三个层级的量化值结果}
+		\label{fig:权重组合}
+	\end{figure}
 
 
 
@@ -371,8 +378,255 @@
 		起飞时易发生安全事故的原因之一是当飞机加足马力达到起飞速度时，飞机以每小时几千米的速度向前行进，面对瞬息万变的情况，无论出现什么情况，哪怕是失火，都必须继续起飞，因为剩余的跑道已不够让飞机安全停下，按照飞机高速运动状态下的惯性作用，它很容易直接冲出跑道，一旦冲出跑道就会造成不可挽回的局面，当然，这就要求起飞机场在跑道的末端安装有跑道阻拦装置，用飞机的重力作用将飞机起落架卡住，从而阻止飞行，继续向前逼停飞机。
 
 		落地机场的跑道是影响机场运行的关键因素之一，只有精确地把握飞机的跑道占用时间、着陆距离等重要参数，结合相应的管制规则，才能真实地反映飞机在跑道上的运行动态，让飞机安全降落。飞机的标准着陆过程可以分为5个阶段:进近拉平段、第一过渡段、减速段、第二过渡段、脱离段。当落地机场跑道长度较短时，容错率低，对机长的操作技术要求高，易于发生安全事故。同时，落地机场的班次也对落地安全也有一定的影响，对于班次多的机场，飞机在降落过程中更容易受到其他飞机的干扰，更易于发生安全事故。
+		\item \textbf{时间}：在不同时间，如一年中的不同季度，当日时间等都在一定程度上会影响到飞行的安全。这是由于不同的环境可能对机组人员的操作产生一定影响。对于该方面的分析，我们将在问题三中详细叙述。
 	\end{itemize}
+	\subsection{问题二模型的建立与求解}
+	\subsection{问题三模型的建立与求解}
 
+	\subsection{问题四模型的建立与求解}
+	对于问题四，我们首先附件3的数据特点，我们发现附件3由2367行数据与197列指标组成，是基于飞行参数对机组人员飞行技术探讨的大体量、高维度的数据。首先，我们需要对原始数据表进行预处理，包括空缺值、异常值、重复值、标签编码等操作，从而获得纯净数据。之后观察数据，进行初步降维，剔除方差较小的列数据，提升模型的预测效率。之后对数据进行标准化处理，通过PCA-CVCR的分析，确定保留指标的个数，再通过随机森林（Random Forest，RF）及极端梯度提升（eXtreme Gradient Boosting, XGBoost）模型，对数据建立多分类预测模型，并分析各指标的重要程度，进行第二次降维，选择合理指标，建立最终XGBoost模型，并分析模型的效果，计算模型的准确率、平均绝对误差、均方误差以及均方根误差，同时进行5折交叉验证，以及绘制模型的分类报告、混淆矩阵热力图、ROC/AUC曲线等，综合评价模型的效果。
+	\subsubsection{附件3数据预处理}
+	对于附件3，我们通过以下步骤对数据进行预处理：
+	\begin{itemize}
+		\item \textbf{空缺值处理}：通过观察，我们发现该数据集存在多列数据大部分缺失，综合分析，我们确定$20\%$阈值进行剔除列数据，即若该列数据缺失率超过$20\%$，则剔除该列数据，经过统计，共计52个列数据；同时，若该列数据缺失率小于$20\%$，采用众数填充的方式进行。
+		\item \textbf{部分列数据剔除（初步降维）}：通过观察，我们发现该数据集存在多列其下各自数据一致的情况，分别是“机型”“TO Gate 1”“TO Gate 2”“TD Gate 3”“TD Gate 2”“TD Gate 1-1”“TO\_Vr”，同时包括“落地主操控”，这些指标对我们预测几组飞行技术影响很小，趋近于0，因此，我们将其剔除。
+		\item \textbf{标签编码}：为了让模型更多地挖掘数据隐含的信息，我们需要对数据形式为字符型数据进行便签编码，分别是“V2\_Method”“Vref\_Method”“RoD\_Method”“MACH\_Method”\\“落地主操控人员资质”，这里我们利用Python中sklearn库preprocessing模块的LabelEncoder进行处理。
+		\item \textbf{数据标准化}：为了避免数据量纲对模型的影响，我们需要对数据进行Z-score标准化，处理过程同前文分析，见\textcolor{blue}{\nameref{数据标准化}}。
+	\end{itemize}
+	\subsubsection{多分类模型的建立}\label{RF-XGBoost}
+	这里我们建立随机森林（Random Forest，RF）及极端梯度提升（eXtreme Gradient Boosting, XGBoost）模型，过程如下分析。
+	
+	\textbf{随机森林（Random Forest, RF）}是由多棵决策树（Decision Tree）进行组合后对预测结果投票或取均值的一种算法\textcolor{blue}{\cite{Paper:随机森林}}。其有分类和回归两种模型，对于本题，我们选择分类模型。其伪代码如\textcolor{blue}{Algorithm\ref{RFfunction}}所示。
+	
+	\scalebox{0.88}{
+	\begin{algorithm}[H]
+		\label{RFfunction}
+		\KwData{数据集$\mathcal{D}$}
+		\textbf{function} DTree$\left(\mathcal{D}\right)$\
+		
+		\eIf{Termination}
+		{\textbf{return} $\mathrm{base}\left(g_t\right)$}
+		{\textbf{learn} $b\left(x\right)$并且依据$b\left(x\right)$划分$\mathcal{D}$为$\mathcal{D}_C$\
+
+		\textbf{build} $G_C \leftarrow$ DTree($\mathcal{D}_C$)\
+
+		\textbf{return} $G\left(x\right)=\sum\limits_{C=1}^{C}[\![b\left(x\right)=C]\!]G_C\left(x\right)$}
+		
+		\textbf{function} RandomForest$\left(\mathcal{D}\right)$\
+		
+		\For{$t=1,2,3,\cdots,T$}{\textbf{request} 数据集$\tilde{\mathcal{D}}_t \leftarrow$ BoostStrapping$\left(\mathcal{D}\right)$\
+		
+		\textbf{obtain} DTree $g_t\leftarrow$ DTree$\left(\tilde{\mathcal{D}}_t\right)$\
+
+		\textbf{return} $G=$ Uniform$\left(g_t\right)$
+		}
+		
+		\KwResult{随机森林模型$G=\mathrm{Uniform}\left(g_t\right)$}
+		\caption{随机森林（RF）}
+	\end{algorithm}}
+
+	\textbf{极端梯度提升（eXtreme Gradient Boosting, XGBoost）}。XGBoost算法是一种基于树模型的优化模型，其将弱分类器组合，训练出一个较强的分类器。该算法通过多次迭代，生成一个新的树模型用于优化前一个树模型，随着迭代次数的增多，该模型的预测精度也会相应提高\textcolor{blue}{\cite{pxgboost1}}。
+
+		记通过数据处理后的数据集特征为$R\left(x_{ij}\right)_{m\times n}$，表示其包含$m$个用户，$n$个特征，在训练中形成的CART树的集合记为$F=\left\{f\left(x\right)=w_{q\left(x\right)},q:\mathbf{R}^n\to T,w\in \mathbf{R}^T\right\}$，其中$q$为树模型的叶节点决策规划，$T$为某一树模型叶节点数量，$w$为叶节点对应的得分\textcolor{blue}{\cite{pxgboost2}}。对于预测的$y$值，其计算公式为
+		\begin{equation}
+			\hat{y}=\varphi \left( x_i \right) =\sum\limits_{k=1}^K{f_k\left( x_i \right)} \label{fXGBoostypre}
+		\end{equation}
+	
+		XGBoost算法在每一次迭代过程中会保存前面所学习的模型，会将这些模型加入到新一轮迭代过程中，因此我们记第$i$个模型为预测结果为
+		\begin{equation}
+			\hat{y}_{i}^{\left(t\right)}=\hat{y}_{i}^{\left(t-1\right)}+f_t\left(x_i\right) \label{fXGBoostyprei}
+		\end{equation}
+		
+		XGBoost算法的目标函数计算公式如下
+		\begin{equation}
+			L^{\left(t\right)}=\sum\limits_{i=1}^{n}l\left(y_i,\hat{y}_{i}^{\left(t-1\right)}+f_t\left(x_i\right)\right)+\gamma T+\frac{1}{2}\lambda\sum\limits_{j=1}^T{w_j^2}+\mathrm{const} \label{fXGBoostL}
+		\end{equation}
+		% 其中
+		% \begin{equation}
+		% 	\Omega\left(f_t\right)=\gamma T+\frac{1}{2}\lambda\sum\limits_{j=1}^T{w_j^2} \label{fXGBoostOmega}
+		% \end{equation}
+		上述公式中，$l$为模型误差损失，描述在该模型下预测值与实际值之间的出差异损失，$\Omega$为模型叶节点的正则项惩罚系数，$\gamma$与$\lambda$为模型的超参数\textcolor{blue}{\cite{pxgboost2}}。
+		通常情况下，我们难以用枚举法得到在模型中所训练出来的树结构，因此这里采用贪婪算法，从单叶子节点开始，通过迭代方法，将其加入到树结构中，从而得到最优解，其计算公式\textcolor{blue}{\cite{pxgboost3}}如下
+		\begin{equation}
+			\mathcal{L}_{split}=\frac{1}{2}\left[\frac{\left(\sum_{i\in I_L}g_i\right)^2}{\sum_{i\in I_L}h_i+\lambda}+\frac{\left(\sum_{i\in I_R}g_i\right)^2}{\sum_{i\in I_R}h_i+\lambda}-\frac{\left(\sum_{i\in I}g_i\right)^2}{\sum_{i\in I}h_i+\lambda}\right]-\gamma \label{fXGBoostLsplit}
+		\end{equation}
+		其中$I_j=\left\{i|q\left(x_i\right)=j\right\}$为叶节点$j$上的样本集合\textcolor{blue}{\cite{pxgboost2}}，且有
+		\begin{equation}
+			g_i=\partial_{\hat{y}^{\left(t-1\right)}}l\left(y_i,\hat{y}_i^{\left(t-1\right)}\right) \label{xgboostgi}
+		\end{equation}
+		\begin{equation}
+			h_i=\partial_{\hat{y}^{\left(t-1\right)}}^2l\left(y_i,\hat{y}_i^{\left(t-1\right)}\right) \label{xgboosthi}
+		\end{equation}
+	
+		通过上述分析，我们可以得到XGBoost算法简图，如\textcolor{blue}{\cref{fig:XGBoost}}所示。
+		\begin{figure}[H]
+			\centerline{\includegraphics[scale=0.60]{XGBoost简图.pdf}}
+			\caption{XGBoost算法简图}\label{fig:XGBoost}
+		\end{figure}
+
+	对于该数据集，我们利用得到的预处理后的数据进行训练、测试\textcolor{blue}{\footnote{这里我们划分训练与测试集比例为$9:1$。}}，上述量模型效果见\textcolor{blue}{\cref{tab:初次效果}}。
+\begin{table}[H]
+	\centering
+	\caption{RF与XGBoost初次学习效果}
+	\scalebox{0.85}{
+	  \begin{tabular}{cc}
+	  \toprule
+	  \textbf{模型} & \textbf{准确率} \\
+	  \midrule
+	  RF    & 0.6893 \\
+	  XGBoost & 0.8049 \\
+	  \bottomrule
+	  \end{tabular}}
+	\label{tab:初次效果}
+\end{table}
+	\subsubsection{PCA-CVCR\&RF-XGBoost数据降维}
+	为了提升模型的效果，提升学习、预测效率，我们采用PCA-CVCR\&RF-XGBoost数据降维进行特征工程，具体过程如下：
+	\begin{itemize}
+		\item \textbf{PCA-CVCR}：该模型用于对原数据进行累计方差贡献率解释，确定指标个数，在上文已经提及，这里不再赘述，见\textcolor{blue}{\nameref{PCA-CVCR}}。
+		\item \textbf{RF-XGBoost}：该组合模型综合上述两模型，绘制重要程度排序及量化重要程度，从而确定影响机组飞行技术评估的重要性因素。
+	\end{itemize}
+	经过上述操作，我们首先得到PCA-CVCR图示，见\textcolor{blue}{\cref{fig:附件3累计方差解释}}。
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.85\textwidth]{资质PCA累计方差解释.pdf}
+		\caption{影响机组飞行技术评估的指标累计方差解释}
+		\label{fig:附件3累计方差解释}
+	\end{figure}
+
+	通过观察上图，我们可以发现，该数据集维度高，在指标个数为120左右时，累计解释方差才逐渐收敛于1.0，则对于该数据，大多对飞行参数指标均对机组飞行技术的评估有一定影响，因此仅从该方面，我们还尚且不能确定保留下的指标数几对应指标，因此这里我们再依据\textcolor{blue}{\nameref{RF-XGBoost}}，得到各指标对评估的影响量化程度，对于RF排序见\textcolor{blue}{\cref{fig:RF排序}}，对于XGBoost排序见\textcolor{blue}{\cref{fig:XGBoost排序}}。\textcolor{blue}{\footnote{由于XGBoost重要度排序图示篇幅过大，因此我们将其放置于附录中。}}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.90\textwidth]{FeatureImportanceRF.pdf}
+		\caption{RF重要度排序}
+		\label{fig:RF排序}
+	\end{figure}
+
+	根据上述两图结果，我们发现对于大多数指标其对机组飞行技术的评估影响均在一致范围内，仅有少数重要性程度非常低，因此我们着重分析RF与XGBoost的排名后10个指标，综合分析，最终选择剔除5列指标，分别为“CASgearselected”“MinPRWTDG2toG1”“MaxLeft-\\(LOC)TDG2toG1”“V2\_Method”“MaxRight(LOC)TDG3toG2”。
+
+	通过上述处理后，原数据集从196维度降维至127，这与我们先前利用PCA-CVCR分析的保留指标在误差范围内一致。
+
+	\subsubsection{新数据集模型的建立与求解}
+	通过上述降维处理后，我们再次利用RF及XGBoost模型，对新数据集进行训练、测试，这里我们比例划分依旧为$9:1$。但我们还发现对于“不同资质”这一列资质为C的落地主操控人员只有两人，仅占附件3所给人员的$0.0844\,\%$，数据量过少，且两条数据时间间隔非常久，利用价值较低，若只根据这两个数据建立出的资质的评价标准模型，得到的结果准确性低。因此为平衡多分类样本，我们将C类剔除，保留A、F、J、M、T类别，利用XGBoost模型进行多分类预测学习。
+
+	通过分析降维处理后，模型精度有一定提升，较原先提升$5.8915\,\%$。同时，我们计算出模型的准确率（Accuracy）、平均绝对误差（Mean Absolute Error，MAE）、均方误差（Mean Square Error, MSE），最终结果见\textcolor{blue}{\cref{tab:XGBoostResult}}。对于多分类模型，该三项指标，计算公式如下：
+\begin{itemize}
+	\item \textbf{准确率}
+		\begin{equation}
+		\mathrm{Accuracy}=\frac{N_{\mathrm{TruePredict}}}{N_{\mathrm{Sample}}} \label{Accuracy}
+		\end{equation}
+	其中，$N_{\mathrm{TruePredict}}$为预测正确的样本数，$N_{\mathrm{Sample}}$为被预测的样本总数；
+	\item \textbf{平均绝对误差}
+		\begin{equation}
+		\mathrm{MAE}=\frac{1}{n}\sum_{i=1}^{n}\left|y_{i}-\hat{y}_{i}\right| \label{MAE}
+		\end{equation}
+	其中，$y_i$为实际值，$\hat{y}_i$为预测值；
+	\item \textbf{均方误差}
+		\begin{equation}
+		\mathrm{MSE}=\frac{1}{n}\sum_{i=1}^{n}\left(y_{i}-\hat{y}_{i}\right)^{2} \label{MSE}
+		\end{equation}
+	\item \textbf{均方根误差}
+		\begin{equation}
+		\mathrm{RMSE}=\sqrt{\frac{1}{n}\sum_{i=1}^{n}\left(y_{i}-\hat{y}_{i}\right)^{2}} \label{RMSE}
+		\end{equation}
+\end{itemize}
+
+\begin{table}[H]
+	\centering
+	\caption{XGBoost模型最终效果}
+	\scalebox{0.85}{
+	  \begin{tabular}{cccc}
+	  \toprule
+	  \textbf{评价指标} & \textbf{初始} & \textbf{最终} & \textbf{提升（较原先）} \\
+	  \midrule
+	  准确率   & 0.8049 & 0.8523  & 5.8915 \% \\
+	  平均绝对误差 & /     & 0.2954  & / \\
+	  均方误差  & /     & 0.7173  & / \\
+	  均方根误差 & /     & 0.8469  & / \\
+	  \bottomrule
+	  \end{tabular}}
+	\label{tab:XGBoostResult}
+\end{table}
+
+但仅仅通过上述指标来判定模型的效果显然有片面的方面，因此在下文我们对模型进行五折交叉验证、绘制模型的分类报告、混淆矩阵热力图、ROC/AUC曲线，综合评估模型效果。
+	\subsubsection{预测效果分析}
+	\textbf{五折交叉验证（Cross-Validation，CV）}。具体结果见\textcolor{blue}{\cref{tab:五折交叉结果}}。
+\begin{table}[H]
+	\centering
+	\caption{XGboost模型五折交叉验证结果}
+	\scalebox{0.85}{
+	  \begin{tabular}{ccccccc}
+	  \toprule
+	  \multicolumn{5}{c}{\textbf{CV=5，准确率}} & \textbf{均值} & \textbf{方差} \\
+	  \midrule
+	  0.8099  & 0.8052  & 0.7981  & 0.8380  & 0.8122  & 0.8127 & 0.0136 \\
+	  \bottomrule
+	  \end{tabular}}
+	\label{tab:五折交叉结果}
+\end{table}
+
+\textbf{分类报告}。分类报告包括每一类别的精确率（Precision），召回率（Recall），F1分数值（F1-Score）。对于这三项值，其计算公式如下：
+		\begin{itemize}
+			\item {\heiti 精确率}
+			\begin{equation}
+				\mathrm{Precision} = \frac{TP}{TP+FP} \label{Precision}
+			\end{equation}
+			\item {\heiti 召回率}
+			\begin{equation}
+				\mathrm{Recall} = \frac{TP}{TP+FN} \label{Recall}
+			\end{equation}
+			\item {\heiti F1分数值} 
+			\begin{equation}
+				\mathrm{F}1 = \frac{2\times \mathrm{Precision}\times \mathrm{Recall}}{\mathrm{Precision}+\mathrm{Recall}}=\frac{TP}{TP+\frac{1}{2}\left(FP+FN\right)} \label{F1-Score}
+			\end{equation}
+		\end{itemize}
+		根据上述\textcolor{blue}{\eqref{Precision}}、\textcolor{blue}{\eqref{Recall}}、\textcolor{blue}{\eqref{F1-Score}}，我们可以计算出模型对于每一类别的三项指标值，并绘制分类报告图，见\textcolor{blue}{\cref{fig:分类报告}}。
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.70\textwidth]{ClassificationReport.pdf}
+			\caption{XGBoost 分类报告}
+			\label{fig:分类报告}
+		\end{figure}
+
+\textbf{混淆矩阵热力图}。该图示的主对角线数据之和为模型预测准确的样本数。对于多分类模型，我们可以随机指定一类为正类，而其余就为对应的负类。这里我们需要引入四项值，分别为$TP$、$FN$、$FP$、$TN$，其中T为True，F为False，这两个字母表示预测值与实际值是否相同；P为Positive，N为Negative，这两个字母表示预测出的是属于正类（阳性）还是负类（阴性）。而混淆矩阵热力图即为这些值组成，该图示可以直观地观察到预测准确与错误的情况，以及模型对于每一类别的区分程度，见\textcolor{blue}{\cref{fig:混淆矩阵热力图}}。
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.70\textwidth]{ConfusionMatrix.pdf}
+			\caption{XGBoost 混淆矩阵热力图}
+			\label{fig:混淆矩阵热力图}
+		\end{figure}
+
+\textbf{ROC/AUC曲线}。在分析特征曲线及曲线下面积（Receiver Operating Characteristic/Area Under the Curve, ROC/AUC）图之前，我们需要了解相关参数：
+		\begin{itemize}
+			\item {\heiti 灵敏度}\textbf{（Sensitivity）}。灵敏度又被称为真阳性率，即$TP$率，定义为：
+			\begin{equation}
+				\mathrm{Sensitivity}=TPR=\frac{TP}{TP+FN} \label{Sensitivity}
+			\end{equation}
+			\item {\heiti 特异性}\textbf{（Specificity）}。特异性又被称为真阴性率，即$TN$率，定义为：
+			\begin{equation}
+				\mathrm{Specificity}=TNR=\frac{TN}{TN+FP} \label{Specificity}
+			\end{equation}
+			\item \textbf{1-Specificity}。称为假阳性率（False Positive Rate, $FPR$），定义为：
+			\begin{equation}
+				FPR=1-\mathrm{Specificity}=\frac{FP}{FP+TN} \label{FPR}
+			\end{equation}
+			\item \textbf{1-Sensitivity}。称为假阴性率（False Negative Rate, $FNR$），定义为：
+			\begin{equation}
+				FNR=1-\mathrm{Sensitivity}=\frac{FN}{FN+TP} \label{FNR}
+			\end{equation}
+		\end{itemize}
+		$FPR$和$FNR$均对数据分布的变化不敏感\textcolor{blue}{\cite{Paper:ROCAUC}}，因此这两个指标可以用于在不平衡的数据上建立的模型效果的评价。
+		
+该可视化以每一类别的$1-\mathrm{Specificity}$即$FPR$为横坐标，以$\mathrm{Sensitivity}$即$TPR$为纵坐标，其可体现出模型的灵敏度与特异性之间的关系与差异。因此，该图的理想点位于左上角，即$FPR=0$且$TPR=1$，换言之，当曲线越靠近左上角，模型效果就越优。从而，我们可以得到另一项指标，即曲线下面积（Area Under the Curve, AUC），由上述分析可知，AUC值越高，模型的整体效果也就越优。见\textcolor{blue}{\cref{fig:ROCAUC}}。
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.70\textwidth]{ROCAUC.pdf}
+			\caption{XGBoost ROC/AUC曲线}
+			\label{fig:ROCAUC}
+		\end{figure}
+
+通过综合分析上述评价结果，我们可以发现基于飞行数据对机组飞行技术的评估模型效果良好，无论是模型精度、平均绝对误差、均方误差还是均方根误差都较优秀，模型泛化能力较强，分类效果优秀。
+  
+	\subsection{问题五模型的建立与求解}
 
 
 	\section{模型的评价与推广}
@@ -402,6 +656,7 @@
 	\newpage
 	\phantomsection
 	\addcontentsline{toc}{section}{\textbf{参考文献}}
+	\begin{spacing}{1.08}
 	\begin{thebibliography}{99}
 	\bibitem{Paper:刘柳}刘柳. 基于QAR数据的着陆阶段飞行风险研究[D].重庆大学,2018.
 	\bibitem{Paper:龙海江}龙海江. 基于QAR数据的重着陆分析研究[D].中国民用航空飞行学院,2020.DOI:10.27722/d.cnki.gzgmh.2020.000089.
@@ -419,8 +674,18 @@
 
 	\bibitem{Paper:层次聚类}司守奎,孙玺菁.数学建模算法与应用[M].北京:国防工业出版社,2022:264.
 
-	\end{thebibliography}
+	\bibitem{Paper:随机森林}饶雷,冉军,陶建权,胡号朋,吴沁,熊圣新.基于随机森林的海上风电机组发电机轴承异常状态监测方法[J].船舶工程,2022,44(S2):27-31.DOI:10.13788/j.cnki.cbgc.2022.S2.06.
 
+	\bibitem{pxgboost1}陈振宇,刘金波,李晨,季晓慧,李大鹏,黄运豪,狄方春,高兴宇,徐立中.基于LSTM与XGBoost组合模型的超短期电力负荷预测[J].电网技术,2020,44(02):614-620.DOI:10.13335/j.1000-3673.pst.2019.1566.
+
+	\bibitem{pxgboost2}杨贵军,徐雪,赵富强.基于XGBoost算法的用户评分预测模型及应用[J].数据分析与知识发现,2019,3(01):118-126.
+
+	\bibitem{pxgboost3}Tianqi Chen and Carlos Guestrin. 2016. XGBoost: A Scalable Tree Boosting System. In Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD '16). Association for Computing Machinery, New York, NY, USA, 785–794. \url{https://doi.org/10.1145/2939672.2939785}.
+
+	\bibitem{Paper:ROCAUC}A.Tharwat, Applied Computing and Informatics (2018). \url{https://doi.org/10.1016/j.aci.2018.08.003}.
+
+	\end{thebibliography}
+	\end{spacing}
 	\newpage
 
 	\phantomsection
@@ -436,7 +701,12 @@
 % \addcontentsline{toc}{subsection}{[A]图示}
 	% \section*{[A]图示}
 	\noindent{\heiti [A]图示}
-
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.55\textwidth]{FeatureImportanceXGB.pdf}
+		\caption{XGBoost重要度排序}
+		\label{fig:XGBoost排序}
+	\end{figure}
 \newpage
 % \phantomsection
 % \addcontentsline{toc}{subsection}{[B]支撑文件列表}
