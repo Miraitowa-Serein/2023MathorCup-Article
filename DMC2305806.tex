@@ -371,7 +371,7 @@
 
 
 	同时我们还对前文所提及的指标进行定性分析，分析如下：
-	\begin{itemize}
+	\begin{itemize}\label{影响}
 		\item \textbf{飞机重量}： 如果飞机的重量过轻，首先会导致飞机稳定性受到影响，飞机的重量对于保持稳定而言至关重要。当飞机重量过轻时，它将变得更加敏感，更容易受风等环境因素的影响，从而减小其稳定性和控制性能。其次飞机安全受挑战，一些重要的设备如降落伞、救生设备等会增加飞机的重量，但是它们对安全至关重要。如果去除这些设备，飞机的安全性将面临严重挑战。同样，着陆过程，飞机重量过轻，它所需要的升力就会更小，因此空速相对更小，拉平着陆时，一旦收油门，飞机的减速效果就会很显著，平飘能力较弱，为了维持平稳安全的下降率触地，需要增大接地仰角。如果仰角增加不足，容易快速失去升力导致落地G值大，甚至是重着陆，仰角增加过快过大则会增加擦机尾的风险。因此在着陆拉平触地这一过程，对飞行员在配合使用油门和俯仰操纵上有更高的要求。在另一方面，如果客机的重量过重，也会产生相类似的问题：飞机稳定性和控制力受到影响，并增加机身疲劳的风险。因此，保持适当的客机重量是确保飞机安全和经济效益的关键一步。
 		\item \textbf{起飞机场、落地机场}：从全球已发生的飞机事故统计数据来看，起飞和着陆阶段约占总飞行时间的$6\,\%$，但发生事故的比例却高达$63\,\%$。
 		
@@ -381,7 +381,114 @@
 		\item \textbf{时间}：在不同时间，如一年中的不同季度，当日时间等都在一定程度上会影响到飞行的安全。这是由于不同的环境可能对机组人员的操作产生一定影响。对于该方面的分析，我们将在问题三中详细叙述。
 	\end{itemize}
 	\subsection{问题二模型的建立与求解}
+	飞机飞行过程通常划分为：起飞、爬升、巡航、下降、进近和着陆六个阶段\textcolor{blue}{\cite{Paper:郑薇}}。上述过程中，进近与着陆是整个飞行过程中最关键也是最容易出现不安全事件的阶段。有以下几点原因：
+	\begin{itemize}
+		\item \textbf{环境干预}：此时飞行易受到该降落机场所在区域的环境，具体分析已在前文叙述，此处不再赘述，见\textcolor{blue}{\nameref{影响}}。
+		\item \textbf{人为操作}：由于环境的影响，人为操作可能受到一定影响，如飞行员的精神状态、操作技术等。同时在进近过程中，机组人员需要将机身与降落跑道对齐，使得飞机此时需要降速，修正方向等，从而多方面的一系列操作会对飞行安全产生一定影响。此外在降落过程中，$G$值显得尤为重要，若$G$值过大，会造成明显的重着陆，这样不仅对飞机设备产生影响，也会对全机人员安全产生不良影响。
+		\item \textbf{飞机状态}：在上述两个过程中，此时飞机需要调整的指标过多，其状态不稳定，同时飞机状态会受到环境、人为操作的影响，此外，飞机状态又会反作用于人为操作，因此该三方面是相互关联，相互制约的。
+	\end{itemize}
+	
+	因此，对于问题二，我们在问题一的基础上，以$10\,\text{Hz}$为频率，选取接地前9秒及接地后9秒主要相关数据，共计19秒数据，精确到0.1秒。共8组数据，即8次航班，依此建立“着陆监控预警”模型，依据模型对降落过程中的飞行操纵进行合理性定性与定量描述。
+	\subsubsection{模型的建立}
+	首先我们依据QAR数据特点，以时间序列为自变量，并结合问题一的重要性指标，选取“杆量”“盘量”“着陆G值”“姿态（俯仰角）”及“坡度”为主要因素建立了“着陆监控预警”模型并将各航班着落过程量值可视化。这里我们以“空地电门”“降落杆”等因素来判断飞机落地瞬间。因此在后学绘制可视化监控图时，我们以降落时刻所在秒为$0$时刻，则落地前为负时刻，滑行阶段为正时刻。
+	\subsubsection{模型的求解与结果分析}
+	由于8次航班数据过多，绘制图形篇幅过大，因此在正文部分我们展示具有代表性的航班1、航班3、航班7、航班8，其余图示可在附录中查看。
+	\begin{itemize}
+		\item \textbf{针对“航线1”}，预警可视化图见\textcolor{blue}{\cref{fig:1-1}}。我们发现在航线1中着陆的前3秒和后1秒盘量有明显下降，坡度发生较大变化，我们分析认为是在降落过程中遇到突发情况，如遇到大风、雨雪等恶劣天气，使得飞行机组被迫做出调整以防止偏离航线。
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.70\textwidth]{1-1 Landing.pdf}
+			\caption{航班1 着陆过程指标量值实时监视}
+			\label{fig:1-1}
+		\end{figure}
+		\item \textbf{针对“航线2”}，预警可视化图见\textcolor{blue}{\cref{fig:1-2}}。此模型中着陆过程中杆量总体变化较小，但其姿态变化较快，我们分析认为，此次降落过程中可能出现了降落速度过小或顺风降落致使升力不足的情况。
+
+		\item \textbf{针对“航线3”}，预警可视化图见\textcolor{blue}{\cref{fig:1-3}}。此模型在落地前飞行基本处于平稳状态，但在落地后，杆量先发生较小的变化，在之后4秒内，杆量发生连续突变，我们分析其原因是飞机发生了弹跳，机组为了控制飞机而不断调节杆量。
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.70\textwidth]{1-3 Landing.pdf}
+			\caption{航班3 着陆过程指标量值实时监视}
+			\label{fig:1-3}
+		\end{figure}
+		\item \textbf{针对“航线4”}，预警可视化图见\textcolor{blue}{\cref{fig:1-4}}。航线4杆量变化较为平缓，高度下降较为缓和，但在降落前7.5s至降落后2s内，其飞行姿态始终保持向左偏转的状态，我们认为其遭遇了较强横风或类似恶劣天气，破坏了飞机的稳定状态。
+
+		\item \textbf{针对“航线5”}，预警可视化图见\textcolor{blue}{\cref{fig:1-5}}。此次降落在0-2.5s的时间段内总体下降较为平缓，但在2.5s至5.0s这一时间段内下降突然加快，我们分析认为这可能于人为干预有关，如：50ft至接地距离过远，飞行员须尽快使飞机接地，并脱离跑道。
+
+		\item \textbf{针对“航线6”}，预警可视化图见\textcolor{blue}{\cref{fig:1-6}}。此模型从杆量和盘量的角度来看变化幅度较小，总体较为平稳。但我们发现，其坡度变化较为明显，我们分析认为其在降落过程中飞行速度较慢同时遭遇大风或顺风情形，致使飞机摆动，在7.5s之后，即起落架完全接地后杆量发生了较大突变，我们认为此次着陆过程中接地偏重。
+
+		\item \textbf{针对“航线7”}，预警可视化图见\textcolor{blue}{\cref{fig:1-7}}。在此次着陆过程中，我们发现在起落架完全接地后杆量并未发生明显变化，此次降落过程较为平缓。值得注意的是，此次航班降落过程中整体向右偏转，我们认为飞机在降落过程中遭遇了较强横风，一定程度上影响了飞机的坡度，干扰飞行员正常的飞行操作。
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.70\textwidth]{1-7 Landing.pdf}
+			\caption{航班7 着陆过程指标量值实时监视}
+			\label{fig:1-7}
+		\end{figure}
+		\item \textbf{针对“航线8”}，预警可视化图见\textcolor{blue}{\cref{fig:1-8}}。在此次着陆过程中，飞行员选择了保持相对稳定的姿态（俯仰角）着陆，从杆量变化来看，在飞机完全接地时，杆量变化量极小，可见此次降落的接地过程较为平稳，进近过程受环境影响大，飞机摆动较大。
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.70\textwidth]{1-8 Landing.pdf}
+			\caption{航班8 着陆过程指标量值实时监视}
+			\label{fig:1-8}
+		\end{figure}
+	\end{itemize}
+
+
 	\subsection{问题三模型的建立与求解}
+	对于问题三，我们建立了“超限事件-季度”，“超限事件-飞行阶段”，“超限事件-航线”“警告级别-飞行阶段”分析模型架构，尽可能多维分析超限的不同的情况及基本特征。
+	\subsubsection{多层分析模型架构的建立}
+	附件2中主要提供了“警告级别”“机号”“目的机场”“时间日期”“起飞机场”“超限名称”“飞行阶段”以及“月份”的数据，首先我们对数据进行了预处理，剔除超限名称中“未知”及空白部分的无用数据集，而后我们比较了各因素之间的关联性，发现超限事件与季度（时间）、飞行阶段、航线存在一定联系，警告级别与飞行阶段存在一定联系，故我们剔除其余关联度较低的指标“机号”“月份”，其余因素视为关键因素，建立相关模型。
+	\subsubsection{不同超限基本特征统计分析}
+	
+	对于“超限事件-季度”，我们首先分别选取2015年及2016年的第一季度、第二季度、第三季度和第四季度，分别统计两年四个季度的超限事件总数，建立“超限事件-季度”模型并将其可视化，见\textcolor{blue}{\cref{fig:超限季度}}。我们分析得出2015年和2016年存在一定的共性：两年均出现一二季度超限事件总数远远多于三四季度，故我们认为当地一二季度存在较强影响飞行安全的因素，超限事件的发生于季度存在一定关联。
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.70\textwidth]{超限季度.pdf}
+		\caption{超限事件-季度统计分析结果}
+		\label{fig:超限季度}
+	\end{figure}
+	针对“超限事件-飞行阶段”，我们分别统计了着陆、空中、进近、地面（起飞及着陆）阶段的超限事件总数，其中着陆26406次，空中11119次，进近5591次，（着陆）地面398次，（起飞）地面158次，起飞148次，见\textcolor{blue}{\cref{fig:超限阶段}}。分别占比60.2 \%，25.38 \%，12.77 \%，0.92 \%，0.37 \%，0.36 \%，通过该模型我们发现超限事件主要发生在着陆、空中、进近过程中，显然超限事件与飞行阶段有较强的关联。同时我们还绘制空中、进近及着陆阶段超限事件词云图，如\textcolor{blue}{\cref{fig:空中词云图}}$\sim$\textcolor{blue}{\cref{fig:着陆词云图}}所示。
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=0.82\linewidth]{NightingaleRoseDiagram.png}
+			\caption{超限事件-飞行阶段统计分析结果}
+			\label{fig:超限阶段}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.48\linewidth}
+			\centering
+			\includegraphics[width=1.22\linewidth]{预警等级阶段.pdf}
+			\caption{警告级别-飞行阶段统计分析结果}
+			\label{fig:预警等级阶段}
+		\end{minipage}
+	\end{figure}
+
+	对于“超限事件-航线”，我们分别统计了每个航线发生超限的次数，发现机场68,机场89,机场27所在的航线中发生超限的次数远超其他航线，次数都超过了1000，机场68发生的超限次数更是达到了20000次。我们由此分析出个别航线对超限发生的次数有一定的影响，这与航线中目的机场和起飞机场的安全管理，环境，航班密度有关。
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.30\linewidth}
+			\centering
+			\includegraphics[width=0.82\linewidth]{空中词云图.png}
+			\caption{空中超限事件}
+			\label{fig:空中词云图}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.30\linewidth}
+			\centering
+			\includegraphics[width=0.82\linewidth]{进近词云图.png}
+			\caption{进近超限事件}
+			\label{fig:进近词云图}
+		\end{minipage}
+		%\qquad
+		\begin{minipage}{0.30\linewidth}
+			\centering
+			\includegraphics[width=0.82\linewidth]{着陆词云图.png}
+			\caption{着陆超限事件}
+			\label{fig:着陆词云图}
+		\end{minipage}
+	\end{figure}
+	针对“警告级别-飞行阶段”，我们对发生超限最多的三个飞行阶段的警告等级占比进行了绘图，如\textcolor{blue}{\cref{fig:预警等级阶段}}所示。我们发现对于不同飞行阶段，各警告等级占比不同，其中空中阶段的高级别警告占比最大，达到了19\%，这反应了在空中发生安全事故的危险程度更高，空中发生的超限更容易产生严重的后果，同时空中发生的超限次数占比较大，所以对航空安全来说，保护空中飞机平稳飞行格外重要。
 
 	\subsection{问题四模型的建立与求解}
 	对于问题四，我们首先附件3的数据特点，我们发现附件3由2367行数据与197列指标组成，是基于飞行参数对机组人员飞行技术探讨的大体量、高维度的数据。首先，我们需要对原始数据表进行预处理，包括空缺值、异常值、重复值、标签编码等操作，从而获得纯净数据。之后观察数据，进行初步降维，剔除方差较小的列数据，提升模型的预测效率。之后对数据进行标准化处理，通过PCA-CVCR的分析，确定保留指标的个数，再通过随机森林（Random Forest，RF）及极端梯度提升（eXtreme Gradient Boosting, XGBoost）模型，对数据建立多分类预测模型，并分析各指标的重要程度，进行第二次降维，选择合理指标，建立最终XGBoost模型，并分析模型的效果，计算模型的准确率、平均绝对误差、均方误差以及均方根误差，同时进行5折交叉验证，以及绘制模型的分类报告、混淆矩阵热力图、ROC/AUC曲线等，综合评价模型的效果。
@@ -479,7 +586,7 @@
 	  \end{tabular}}
 	\label{tab:初次效果}
 \end{table}
-	\subsubsection{PCA-CVCR\&RF-XGBoost数据降维}
+	\subsubsection{PCA-CVCR \& RF-XGBoost数据降维}
 	为了提升模型的效果，提升学习、预测效率，我们采用PCA-CVCR\&RF-XGBoost数据降维进行特征工程，具体过程如下：
 	\begin{itemize}
 		\item \textbf{PCA-CVCR}：该模型用于对原数据进行累计方差贡献率解释，确定指标个数，在上文已经提及，这里不再赘述，见\textcolor{blue}{\nameref{PCA-CVCR}}。
@@ -684,6 +791,8 @@
 
 	\bibitem{Paper:ROCAUC}A.Tharwat, Applied Computing and Informatics (2018). \url{https://doi.org/10.1016/j.aci.2018.08.003}.
 
+	\bibitem{Paper:郑薇}郑薇. 基于QAR数据的重着陆风险评估及预测研究[D].中国民航大学,2014.
+
 	\end{thebibliography}
 	\end{spacing}
 	\newpage
@@ -701,6 +810,31 @@
 % \addcontentsline{toc}{subsection}{[A]图示}
 	% \section*{[A]图示}
 	\noindent{\heiti [A]图示}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.70\textwidth]{1-2 Landing.pdf}
+		\caption{航班2 着陆过程指标量值实时监视}
+		\label{fig:1-2}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.70\textwidth]{1-4 Landing.pdf}
+		\caption{航班4 着陆过程指标量值实时监视}
+		\label{fig:1-4}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.70\textwidth]{1-5 Landing.pdf}
+		\caption{航班5 着陆过程指标量值实时监视}
+		\label{fig:1-5}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.70\textwidth]{1-6 Landing.pdf}
+		\caption{航班6 着陆过程指标量值实时监视}
+		\label{fig:1-6}
+	\end{figure}
+
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.55\textwidth]{FeatureImportanceXGB.pdf}
